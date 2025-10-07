@@ -19,7 +19,7 @@ A little exercise to build a web application following an agile development proc
 
 ### Sprint 1
 
-- [ ] As a student, I want to be able to register and login an account on CasaConnect so I can review my exchange history and other personal informations. (see #1)
+- [ ] As a student, I want to be able to register and login an account on CasaConnect so I can review my exchange history and other personal informations. (see [#1](/../../issues/3))
 
 ### Sprint 2
 
