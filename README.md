@@ -17,7 +17,7 @@ A little exercise to build a web application following an agile development proc
 
 ## User stories
 
-### Sprint 1
+### **[Sprint 1](https://github.com/swe-students-fall2025/2-web-app-ctrl-squad/issues)**
 
 - [ ] As a student, I want to be able to register and login an account on CasaConnect so I can review my exchange history and other personal informations. (see [#1](/../../issues/1))
 
@@ -47,4 +47,6 @@ See instructions. Delete this line and place instructions to download, configure
 
 ## Task boards
 
-See instructions. Delete this line and place a link to the task boards here.
+### **[Sprint 1](https://github.com/orgs/swe-students-fall2025/projects/5)**
+
+
