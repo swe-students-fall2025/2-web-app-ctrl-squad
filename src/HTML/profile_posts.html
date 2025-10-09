@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Posts - CasaConnect</title></head>
+
+    <body>
+        <h2>My Posts</h2>
+        <ul>
+            <li>
+                <strong>Lamp</strong> - Good ... Available
+                <p>Simple desk lamp.</p>
+                <a href="/item/1">View</a>
+                <form action="/item/1/delete" method="post" style="display:inline" onsubmit="return confirm('Delete this post?');">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+            <li>
+                <strong>Chair</strong> - Like new ... Exchanged
+                <p>Foldable chair.</p>
+                <a href="/item/2">View</a>
+                <form action="/item/2/delete" method="post" style="display:inline" onsubmit="return confirm('Delete this post?');">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+        </ul>
+        <p><a href="/item/new">Create a post</a></p>
+    </body>
+</html>
