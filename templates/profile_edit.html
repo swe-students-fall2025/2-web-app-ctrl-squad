@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Profile - CasaConnect</title></head>
+    <body>
+        <h2>Edit Profile</h2>
+        <form action="/me/edit" method="post" enctype="multipart/form-data">
+            <label>Account name
+                <input name="account_name" value="Amira Adum" required minlength="2" maxlength="40">
+            </label><br>
+            <label>Bio
+                <textarea name="bio" rows="3" maxlength="280">Loves swapping dorm finds.</textarea>
+            </label><br>
+            <label>NYU ID
+                <input type="file" name="picture" accept="image/*">
+            </label><br>
+            <label>Email address 
+                <input type="email" name="email" value="amira.adum@nyu.edu" required>
+            </label><br>
+            <label>Profile Picture
+                <input type="file" name="picture" accept="image/*">
+            </label><br><br>
+            <button type="submit">Save changes</button>
+            <a href="/me">Cancel</a>
+        </form>
+    </body>
+</html>
