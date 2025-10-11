@@ -107,6 +107,15 @@ input[type="submit"] {
     text-decoration: underline;
 }
 
+.badges{ display:flex; gap:6px; }
+.badge{
+  font-size:12px;
+  background:#eee;
+  color:#111;
+  border-radius:9999px;
+  padding:2px 8px;
+}
+
 .bottom-links {
     width: 100%;
     display: flex;
@@ -123,6 +132,22 @@ input[type="submit"] {
     font-weight: 400;
     text-decoration: underline;
     cursor: pointer;
+}
+
+.btn{
+  display:inline-block;
+  background:#111;
+  color:#fff;
+  border:0;
+  border-radius:8px;
+  padding:8px 12px;
+  font-weight:700;
+  text-decoration:none;
+  cursor:pointer;
+}
+
+.btn--danger{
+  background:#c62828;
 }
 
 p {
@@ -268,6 +293,10 @@ p {
     font-weight: 400;
     line-height: normal;
     border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+    width: 100%;
+    box-shadow: 0 0 4px rgba(0,0,0,0.1);
 }
 
 .post-title{
@@ -313,6 +342,12 @@ p {
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+.post-actions{
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
 }
 
 .footer-nav{

@@ -1,27 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Posts - CasaConnect</title></head>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>My Posts - CasaConnect</title>
+        <link rel="stylesheet" href="style.css"/>
+    </head>
 
     <body>
-        <h2>My Posts</h2>
-        <ul>
-            <li>
-                <strong>Lamp</strong> - Good ... Available
-                <p>Simple desk lamp.</p>
-                <a href="/item/1">View</a>
-                <form action="/item/1/delete" method="post" style="display:inline" onsubmit="return confirm('Delete this post?');">
-                    <button type="submit">Delete</button>
+        <div class="screen">
+            <div class="phone profile-posts">
+                <h1>My Posts</h1>
+
+                <div class="list">
+                    <article class="post-card">
+                        <div class="post-header">
+                            <strong>Lamp</strong> 
+                            <div class="badges">
+
+                            <span class="badge">Good</span>
+                            <span class="badge">Available</span>
+                            </div>
+                            </div>
+                        <p class="post-body">Simple desk lamp.</p>
+                        <div class="actions">
+
+                            <a class="btn secondary" href="singlePage.html?id=1">View</a>
+                
+                            <form class="inline" action="/item/1/delete" method="post" onsubmit="return confirm('Delete this post?')">
+                            <button class="btn btn-danger" type="submit">Delete</button>
                 </form>
-            </li>
-            <li>
-                <strong>Chair</strong> - Like new ... Exchanged
-                <p>Foldable chair.</p>
-                <a href="/item/2">View</a>
-                <form action="/item/2/delete" method="post" style="display:inline" onsubmit="return confirm('Delete this post?');">
-                    <button type="submit">Delete</button>
+            </div>
+            </article>
+
+            <article class="post-card">
+                        <div class="post-header">
+                            <strong>Chair</strong> 
+                            <div class="badges">
+
+                            <span class="badge">Like new</span>
+                            <span class="badge">Exchanged</span>
+                            </div>
+                            </div>
+                        <p class="post-body">Foldable chair.</p>
+                        <div class="actions">
+
+                            <a class="btn secondary" href="singlePage.html?id=2">View</a>
+                
+                            <form class="inline" action="/item/2/delete" method="post" onsubmit="return confirm('Delete this post?')">
+                            <button class="btn btn-danger" type="submit">Delete</button>
                 </form>
-            </li>
-        </ul>
-        <p><a href="/item/new">Create a post</a></p>
+            </div>
+            </article>
+        </div>
+        <a class="btn block mt-2" href="additem.html">Create a post</a>
+        </div>
+        </div>
     </body>
 </html>
