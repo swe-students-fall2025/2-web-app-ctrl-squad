@@ -163,7 +163,6 @@ p {
 .search-placeholder{
     flex-grow: 1;
     width: 273px;
-    height: 40px;
     background: #D9D9D9;
     color: #000;
     font-family: Inter;
@@ -172,11 +171,12 @@ p {
     font-weight: 400;
     line-height: normal;
     padding: 5px 7px;
+    display: flex;
+    align-self: center;
 }
 
 .search-icon-container {
     width: 50px;
-    height: 50px;
     flex-shrink: 0;
     background: #1F1E1E;
     color: #FFF;
@@ -321,11 +321,15 @@ p {
     z-index: 10;
     position: fixed;
     bottom: 0;
-    width: 380px;
-    background: lightgray;
+    width: 393px;
+    background: #f1f1f1;
+    border-top: #000 solid 2px;
     padding-top: 10px;
 }
 
 .item-link {
     text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }

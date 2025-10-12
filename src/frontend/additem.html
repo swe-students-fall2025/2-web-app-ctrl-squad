@@ -122,6 +122,10 @@
       font-weight: 800;
       margin-bottom: 16px;
       user-select: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
     }
 
     .dropzone.preview {
@@ -160,7 +164,7 @@
   </style>
 </head>
 
-<body>
+<body id="add-item-body" class="no-footer">
   <div class="screen">
     <div class="phone">
       <div class="topbar">
@@ -174,7 +178,20 @@
         <a class="tab muted" href="addroommate.html" role="tab" aria-selected="false">roommate match</a>
       </div>
 
-      <!-- image input -->
+      <!-- image input 
+        change below action to /api/posts/item and method to POST
+        wire below with the database by
+        1. creating the post model
+        2. Setting up a post/item route
+        3. Implementing the logic to save the post to database
+
+        you will get data from the form using request.form in Flask
+        the /api/posts/item route will handle the form submission:
+        example: /api/posts/item?title=title&category=category&description=description&image=imagefile&location=location&type=type
+        then you will validate the data
+        if valid, save the post to the database
+        if not, return an error response
+      -->
       <form id="postForm" class="form" action="/api/posts/item" method="post" enctype="multipart/form-data">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
           <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
@@ -182,8 +199,31 @@
         </div>
         <input id="imageInput" type="file" name="image" accept="image/*" hidden />
         <!-- post parameters -->
-        <div class="label">Add title...</div>
+        <div class="label">Title</div>
         <input class="input" type="text" name="title" placeholder="Add title..." required />
+
+
+        <div class="label">Type</div>
+        <div class="select-wrap">
+          <select name="type" aria-label="Type" required>
+            <option value="" disabled selected>Choose type</option>
+            <option value="free">Free</option>
+            <option value="exchange">Exchange</option>
+          </select>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+        </div>  
+
+        <div class="label">Location</div>
+        <div class="select-wrap">
+          <select name="location" aria-label="Location" required>
+            <option value="" disabled selected>Choose location</option>
+            <option>On campus Brooklyn</option>
+            <option>On campus Manhattan</option>
+            <option>Off campus</option>
+          </select>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+        </div>  
+
 
         <div class="label">Choose category</div>
         <div class="select-wrap">
