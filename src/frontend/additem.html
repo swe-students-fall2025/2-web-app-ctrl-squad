@@ -1,43 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>🏡 CasaConnect — Add item post</title>
-<style>
-  :root{
-    --bg:#f5f5f5; --ink:#111; --ink-2:#666; --panel:#fff; --accent:#111;
-    --drop:#d9d9d9;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);
-       font:16px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,"Helvetica Neue",Arial;}
-  .screen{display:flex;justify-content:center;align-items:flex-start;min-height:100%;padding:24px 12px;}
-  .phone{width:380px;background:var(--panel);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:18px;}
-  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
-  .btn-back{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;}
-  .tabs{display:flex;margin:8px 0 14px;}
-  .tab{flex:1;text-align:center;padding:10px 12px;font-weight:700;border-radius:8px 8px 0 0;text-decoration:none;display:block;}
-  .tab.active{background:#111;color:#fff;}
-  .tab.muted{background:#dcdcdc;color:#6b6b6b;}
-  .form{padding:10px 4px 2px;}
-  .label{font-weight:700;margin:14px 0 6px;}
-  .input,.select-wrap,.textarea{width:100%;border-radius:6px;background:#e6e6e6;border:0;outline:0;}
-  .input{height:38px;padding:8px 10px;}
-  .textarea{height:120px;padding:10px;resize:vertical;}
-  .select-wrap{position:relative;height:38px;display:flex;align-items:center;margin-bottom:2px;background:#e6e6e6;border-radius:6px;}
-  select{appearance:none;width:100%;height:100%;border:0;background:transparent;padding:0 44px 0 10px;font:inherit;color:#222;outline:none;cursor:pointer;}
-  .select-caret{position:absolute;top:0;right:0;height:100%;width:40px;background:#111;color:#fff;display:grid;place-items:center;border-radius:0 6px 6px 0;pointer-events:none;font-size:13px;}
-  .dropzone{border-radius:10px;background:var(--drop);height:260px;display:grid;place-items:center;border:3px solid #6aa2ff;color:#000;font-weight:800;margin-bottom:16px;user-select:none;}
-  .dropzone.preview{position:relative;overflow:hidden;}
-  .dropzone .remove-btn{position:absolute;top:8px;right:8px;background:rgba(17,17,17,.85);color:#fff;border:0;border-radius:8px;font-size:12px;padding:6px 8px;cursor:pointer;}
-  .actions{display:flex;justify-content:center;padding:18px 0 6px;}
-  .btn-post{background:#111;color:#fff;border:0;border-radius:8px;padding:12px 36px;font-weight:800;cursor:pointer;}
-  .btn-post span{text-decoration:underline;text-underline-offset:3px;}
-  .footer{text-align:center;color:var(--ink-2);font-size:13px;margin-top:10px;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🏡 CasaConnect — Add item post</title>
+  <link rel="stylesheet" href="common_style.css">
+  <style>
+    .btn-back {
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      margin: 8px 0 14px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 12px;
+      font-weight: 700;
+      border-radius: 8px 8px 0 0;
+      text-decoration: none;
+      display: block;
+    }
+
+    .tab.active {
+      background: #111;
+      color: #fff;
+    }
+
+    .tab.muted {
+      background: #dcdcdc;
+      color: #6b6b6b;
+    }
+
+    .form {
+      padding: 10px 4px 2px;
+    }
+
+    .label {
+      font-weight: 700;
+      margin: 14px 0 6px;
+    }
+
+    .input,
+    .select-wrap,
+    .textarea {
+      width: 100%;
+      border-radius: 6px;
+      background: #e6e6e6;
+      border: 0;
+      outline: 0;
+    }
+
+    .input {
+      height: 38px;
+      padding: 8px 10px;
+    }
+
+    .textarea {
+      height: 120px;
+      padding: 10px;
+      resize: vertical;
+    }
+
+    .select-wrap {
+      position: relative;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 2px;
+      background: #e6e6e6;
+      border-radius: 6px;
+    }
+
+    select {
+      appearance: none;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: transparent;
+      padding: 0 44px 0 10px;
+      font: inherit;
+      color: #222;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .select-caret {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 40px;
+      background: #111;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      border-radius: 0 6px 6px 0;
+      pointer-events: none;
+      font-size: 40px;
+      align-content: center
+    }
+
+    .dropzone {
+      border-radius: 10px;
+      background: var(--drop);
+      height: 260px;
+      display: grid;
+      place-items: center;
+      border: 3px solid #6aa2ff;
+      color: #000;
+      font-weight: 800;
+      margin-bottom: 16px;
+      user-select: none;
+    }
+
+    .dropzone.preview {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dropzone .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(17, 17, 17, .85);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      padding: 18px 0 6px;
+    }
+
+    .btn-post {
+      background: #111;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 36px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
 </head>
+
 <body>
   <div class="screen">
     <div class="phone">
@@ -49,7 +171,7 @@
       <!-- link roommate page -->
       <div class="tabs" role="tablist" aria-label="Post type">
         <a class="tab active" href="additem.html" role="tab" aria-selected="true">item exchange</a>
-        <a class="tab muted"  href="addroommate.html" role="tab" aria-selected="false">roommate match</a>
+        <a class="tab muted" href="addroommate.html" role="tab" aria-selected="false">roommate match</a>
       </div>
 
       <!-- image input -->
@@ -77,7 +199,7 @@
         <textarea class="textarea" name="description" placeholder="Add description..." required></textarea>
 
         <div class="actions">
-          <button class="btn-post" type="submit"><span>Post</span></button>
+          <button class="btn btn-post" type="submit"><span>Post</span></button>
         </div>
       </form>
 
@@ -90,12 +212,12 @@
     function smartBack() {
       const params = new URLSearchParams(location.search);
       const from = params.get("from");
-      const map = { profile:"profile.html", home:"home.html", posts:"search.html" };
+      const map = { profile: "profile.html", home: "home.html", posts: "search.html" };
       if (from && map[from]) { location.href = map[from]; return; }
       const sameOriginReferrer =
-        document.referrer && (()=>{ try{ return new URL(document.referrer).origin===location.origin }catch{return false}})();
-      if (sameOriginReferrer && history.length>1) { history.back(); return; }
-      const base = location.pathname.replace(/[^\/]+$/,"");
+        document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false } })();
+      if (sameOriginReferrer && history.length > 1) { history.back(); return; }
+      const base = location.pathname.replace(/[^\/]+$/, "");
       location.href = base + "home.html";
     }
   </script>
@@ -108,17 +230,17 @@
       const form = document.getElementById('postForm');
 
       const MAX_MB = 5;
-      const ACCEPTED = ['image/png','image/jpeg','image/jpg','image/webp','image/gif'];
+      const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 
       const openPicker = () => fileInput.click();
       dropzone.addEventListener('click', openPicker);
-      dropzone.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' '){ e.preventDefault(); openPicker(); }});
+      dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
 
       fileInput.addEventListener('change', () => {
         const file = fileInput.files && fileInput.files[0];
         if (!file) return;
-        if (!ACCEPTED.includes(file.type)) { alert('please upload png/jpg/jpeg/webp/gif'); fileInput.value=''; return; }
-        if (file.size/(1024*1024) > MAX_MB) { alert('maximum 5KB'); fileInput.value=''; return; }
+        if (!ACCEPTED.includes(file.type)) { alert('please upload png/jpg/jpeg/webp/gif'); fileInput.value = ''; return; }
+        if (file.size / (1024 * 1024) > MAX_MB) { alert('maximum 5KB'); fileInput.value = ''; return; }
         const reader = new FileReader();
         reader.onload = () => {
           dropzone.classList.add('preview');
@@ -135,10 +257,10 @@
         reader.readAsDataURL(file);
       });
 
-      ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+      ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
         e.preventDefault(); e.stopPropagation(); dropzone.style.outline = '3px solid #6aa2ff';
       }));
-      ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+      ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
         e.preventDefault(); e.stopPropagation(); dropzone.style.outline = 'none';
       }));
       dropzone.addEventListener('drop', e => {
@@ -148,25 +270,26 @@
         fileInput.dispatchEvent(new Event('change'));
       });
 
-    //   form.addEventListener('submit', async (e) => {
-    //     e.preventDefault();
-    //     const fd = new FormData(form);
-    //     try {
-    //       const res = await fetch(form.action, { method:'POST', body:fd, credentials:'same-origin' });
-    //       if (!res.ok) throw new Error('Upload failed');
-    //       const data = await res.json();
-    //       alert('Item post created!');
-    //       location.href = 'home.html';
-    //     } catch (err) {
-    //       console.error(err); alert('upload failed, try later');
-    //     }
-    //   });
-        // only for repersent, directly jump to post confirm page
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            location.href = 'postconfirm.html';
-        });
+      //   form.addEventListener('submit', async (e) => {
+      //     e.preventDefault();
+      //     const fd = new FormData(form);
+      //     try {
+      //       const res = await fetch(form.action, { method:'POST', body:fd, credentials:'same-origin' });
+      //       if (!res.ok) throw new Error('Upload failed');
+      //       const data = await res.json();
+      //       alert('Item post created!');
+      //       location.href = 'home.html';
+      //     } catch (err) {
+      //       console.error(err); alert('upload failed, try later');
+      //     }
+      //   });
+      // only for repersent, directly jump to post confirm page
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        location.href = 'postconfirm.html';
+      });
     })();
   </script>
 </body>
+
 </html>
