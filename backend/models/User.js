@@ -5,11 +5,12 @@ const userSchema = new mongoose.Schema({
   account_name: { type: String, required: true },
   password: { type: String, required: true },
   bio: String,
-  nyu_id: String,
+  nyu_id: { type: String, required: true, trim: true },
+
   trades: [{ type: mongoose.Schema.Types.ObjectId, ref: "Trade" }],
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
-  favorited: [{ postId: mongoose.Schema.Types.ObjectId }],
+  favorited: [{ type: mongoose.Schema.Types.ObjectId, ref: "Post" }],
   usage_type: [String],
-});
+}, { timestamps: true });
 
 export default mongoose.model("User", userSchema);

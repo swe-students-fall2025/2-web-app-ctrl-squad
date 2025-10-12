@@ -31,15 +31,20 @@
         if not, create a new user and store in the database
         if the user already exists, flash an error message and redirect back to register page
       -->
-      <form id="register-form" class="login-form" action="/register" method="POST">
-        <label for="NetID" required>Net ID:</label>
+      <form id="register-form" action="http://localhost:3000/register" method="POST">
+
+        <label for="NetID">Net ID:</label>
         <input type="text" id="NetID" name="NetID" required>
-        <label for="email" required>Email:</label>
+
+        <label for="email">Email:</label>
         <input type="email" id="email" name="email" required>
-        <label for="username" required>Username:</label>
+
+        <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>
-        <label for="password" required>Password:</label>
+
+        <label for="password">Password:</label>
         <input type="password" id="password" name="password" required>
+
         <input type="submit" value="Register">
       </form>
 
