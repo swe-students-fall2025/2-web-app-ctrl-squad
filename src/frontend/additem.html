@@ -176,7 +176,10 @@
 
       <!-- image input -->
       <form id="postForm" class="form" action="/api/posts/item" method="post" enctype="multipart/form-data">
-        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">Insert Image</div>
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
+          <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
+          Insert Image
+        </div>
         <input id="imageInput" type="file" name="image" accept="image/*" hidden />
         <!-- post parameters -->
         <div class="label">Add title...</div>
@@ -192,7 +195,7 @@
             <option>Clothing</option>
             <option>Other</option>
           </select>
-          <div class="select-caret">▾</div>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
         </div>
 
         <div class="label">Add description...</div>
@@ -220,6 +223,7 @@
       const base = location.pathname.replace(/[^\/]+$/, "");
       location.href = base + "home.html";
     }
+    
   </script>
 
   <!-- insert image -->

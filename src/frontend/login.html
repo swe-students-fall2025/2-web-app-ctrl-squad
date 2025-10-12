@@ -19,7 +19,20 @@
         <h1>CasaConnect</h1>
       </div>
 
-      <form class="login-form" action="login.html" method="post">
+      <!-- change below action to/login route and method to POST 
+        wire below with the database by
+        1. Creating a user model
+        2. Setting up a login route
+        3. Implementing authentication logic
+
+        you will get data from the form using request.form in Flask
+        the /login route will handle the form submission:
+        example: /login?email=user@example.com&password=yourpassword
+        then you will query the database to check if the user exists and if the password matches
+        if valid, redirect to home page
+        if not, flash an error message and redirect back to login page
+      -->
+      <form id="login-form" class="login-form" action="/login" method="POST">
         <label for="email" required>Email:</label>
         <input type="email" id="email" name="email" required>
         <label for="password" required>Password:</label>
