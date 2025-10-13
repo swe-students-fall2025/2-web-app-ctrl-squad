@@ -122,6 +122,10 @@
       font-weight: 800;
       margin-bottom: 16px;
       user-select: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
     }
 
     .dropzone.preview {
@@ -160,7 +164,7 @@
   </style>
 </head>
 
-<body>
+<body id="add-item-body" class="no-footer">
   <div class="screen">
     <div class="phone">
       <div class="topbar">
@@ -182,8 +186,31 @@
         </div>
         <input id="imageInput" type="file" name="images" accept="image/*" hidden multiple />
         <!-- post parameters -->
-        <div class="label">Add title...</div>
+        <div class="label">Title</div>
         <input class="input" type="text" name="title" placeholder="Add title..." required />
+
+
+        <div class="label">Type</div>
+        <div class="select-wrap">
+          <select name="type" aria-label="Type" required>
+            <option value="" disabled selected>Choose type</option>
+            <option value="free">Free</option>
+            <option value="exchange">Exchange</option>
+          </select>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+        </div>  
+
+        <div class="label">Location</div>
+        <div class="select-wrap">
+          <select name="location" aria-label="Location" required>
+            <option value="" disabled selected>Choose location</option>
+            <option>On campus Brooklyn</option>
+            <option>On campus Manhattan</option>
+            <option>Off campus</option>
+          </select>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+        </div>  
+
 
         <div class="label">Choose category</div>
         <div class="select-wrap">
@@ -211,20 +238,36 @@
   </div>
 
   <!-- Back to former page or home.html -->
-  <script>
-    function smartBack() {
-      const params = new URLSearchParams(location.search);
-      const from = params.get("from");
-      const map = { profile: "profile.html", home: "home.html", posts: "search.html" };
-      if (from && map[from]) { location.href = map[from]; return; }
-      const sameOriginReferrer =
-        document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false } })();
-      if (sameOriginReferrer && history.length > 1) { history.back(); return; }
-      const base = location.pathname.replace(/[^\/]+$/, "");
-      location.href = base + "home.html";
-    }
-    
-  </script>
+<script>
+function smartBack() {
+  const params = new URLSearchParams(location.search);
+  const from = params.get("from");
+  const base = location.pathname.replace(/[^\/]+$/, "");
+  const map  = { profile: "profile.html", home: "home.html", posts: "search.html" };
+
+  // 1) If "from" parameter is present and valid, go there
+  if (from && map[from]) { location.href = base + map[from]; return; }
+
+  // 2) If referrer is same-origin and NOT an add page, go there
+  const sameOriginRef =
+    document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false }})();
+  const isAdd = (url) => /(additem\.html|addroommate\.html)$/.test(new URL(url, location.origin).pathname);
+
+  if (sameOriginRef && document.referrer && !isAdd(document.referrer)) {
+    location.href = document.referrer; return;
+  }
+
+  // 3) Otherwise jump to the last non-add page we saved
+  const lastNonAdd = sessionStorage.getItem('lastNonAdd');
+  if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) {
+    location.href = lastNonAdd; return;
+  }
+
+  // 4) Final fallback
+  location.href = base + "home.html";
+}
+</script>
+
 
   <!-- insert image -->
   <script>
