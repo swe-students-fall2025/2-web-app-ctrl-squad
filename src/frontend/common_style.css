@@ -18,6 +18,17 @@ body {
 }
 
 
+.btn-back {
+            background: var(--accent);
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        
 .screen {
     display: flex;
     justify-content: center;
