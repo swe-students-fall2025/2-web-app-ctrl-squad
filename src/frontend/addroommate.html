@@ -123,6 +123,10 @@
       font-weight: 800;
       margin-bottom: 16px;
       user-select: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
     }
 
     .dropzone.preview {
@@ -161,7 +165,7 @@
   </style>
 </head>
 
-<body>
+<body id="add-roommate-body" class="no-footer">
   <div class="screen">
     <div class="phone">
       <div class="topbar">
@@ -175,14 +179,33 @@
       </div>
 
       <!-- parameters -->
+
+      <!-- change below action to /api/posts/roommate route and method to POST 
+        wire below with the database by
+        1. Creating a roommate post model
+        2. Setting up a /api/posts/roommate route
+        3. Implementing post creation logic
+
+        you will get data from the form using request.form in Flask
+        the /api/posts/roommate route will handle the form submission:
+        example: /api/posts/roommate?title=title&year=year&place_to_live=place_to_live&description=description&image=imagefile
+        then you will validate the data
+        if valid, save the post to the database
+        if not, return an error response
+      -->
+
+      <!-- enctype="multipart/form-data" is necessary for file upload -->
       <form id="postForm" class="form" action="/api/posts/roommate" method="post" enctype="multipart/form-data">
-        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">Insert Image</div>
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
+          <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
+          Insert Image
+        </div>
         <input id="imageInput" type="file" name="image" accept="image/*" hidden />
 
         <div class="label">Add title...</div>
         <input class="input" type="text" name="title" placeholder="Add title..." required />
 
-        <div class="label">Year</div>
+        <div class="label">Years to be Roommate</div>
         <div class="select-wrap">
           <select name="year" aria-label="Year" required>
             <option value="" disabled selected>Choose year</option>
@@ -192,11 +215,11 @@
             <option>2</option>
             <option>2.5</option>
           </select>
-          <div class="select-caret">▾</div>
+           <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
         </div>
 
         <div class="label">Place to live</div>
-        <input class="input" type="text" name="place_to_live" placeholder="e.g., Brooklyn, off-campus" required />
+        <input class="input" type="text" name="place_to_live" placeholder="e.g., Brooklyn, off-campus, links to housing" required />
 
         <div class="label">Add description...</div>
         <textarea class="textarea" name="description" placeholder="Add description..." required></textarea>
@@ -211,19 +234,35 @@
   </div>
 
   <!-- Back logic -->
-  <script>
-    function smartBack() {
-      const params = new URLSearchParams(location.search);
-      const from = params.get("from");
-      const map = { profile: "profile.html", home: "home.html", posts: "search.html" };
-      if (from && map[from]) { location.href = map[from]; return; }
-      const sameOriginReferrer =
-        document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false } })();
-      if (sameOriginReferrer && history.length > 1) { history.back(); return; }
-      const base = location.pathname.replace(/[^\/]+$/, "");
-      location.href = base + "home.html";
-    }
-  </script>
+<script>
+function smartBack() {
+  const params = new URLSearchParams(location.search);
+  const from = params.get("from");
+  const base = location.pathname.replace(/[^\/]+$/, "");
+  const map  = { profile: "profile.html", home: "home.html", posts: "search.html" };
+
+  // 1) If "from" parameter is present and valid, go there
+  if (from && map[from]) { location.href = base + map[from]; return; }
+
+  // 2) If referrer is same-origin and NOT an add page, go there
+  const sameOriginRef =
+    document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false }})();
+  const isAdd = (url) => /(additem\.html|addroommate\.html)$/.test(new URL(url, location.origin).pathname);
+
+  if (sameOriginRef && document.referrer && !isAdd(document.referrer)) {
+    location.href = document.referrer; return;
+  }
+
+  // 3) Otherwise jump to the last non-add page we saved
+  const lastNonAdd = sessionStorage.getItem('lastNonAdd');
+  if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) {
+    location.href = lastNonAdd; return;
+  }
+
+  // 4) Final fallback
+  location.href = base + "home.html";
+}
+</script>
 
   <!-- submit parameters -->
   <script>
