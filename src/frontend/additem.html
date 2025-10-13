@@ -178,26 +178,13 @@
         <a class="tab muted" href="addroommate.html" role="tab" aria-selected="false">roommate match</a>
       </div>
 
-      <!-- image input 
-        change below action to /api/posts/item and method to POST
-        wire below with the database by
-        1. creating the post model
-        2. Setting up a post/item route
-        3. Implementing the logic to save the post to database
-
-        you will get data from the form using request.form in Flask
-        the /api/posts/item route will handle the form submission:
-        example: /api/posts/item?title=title&category=category&description=description&image=imagefile&location=location&type=type
-        then you will validate the data
-        if valid, save the post to the database
-        if not, return an error response
-      -->
-      <form id="postForm" class="form" action="/api/posts/item" method="post" enctype="multipart/form-data">
+      <!-- image input -->
+      <form id="postForm" class="form" action="http://localhost:3000/api/posts" method="post">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
           <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
           Insert Image
         </div>
-        <input id="imageInput" type="file" name="image" accept="image/*" hidden />
+        <input id="imageInput" type="file" name="images" accept="image/*" hidden multiple />
         <!-- post parameters -->
         <div class="label">Title</div>
         <input class="input" type="text" name="title" placeholder="Add title..." required />
@@ -330,23 +317,63 @@ function smartBack() {
         fileInput.dispatchEvent(new Event('change'));
       });
 
-      //   form.addEventListener('submit', async (e) => {
-      //     e.preventDefault();
-      //     const fd = new FormData(form);
-      //     try {
-      //       const res = await fetch(form.action, { method:'POST', body:fd, credentials:'same-origin' });
-      //       if (!res.ok) throw new Error('Upload failed');
-      //       const data = await res.json();
-      //       alert('Item post created!');
-      //       location.href = 'home.html';
-      //     } catch (err) {
-      //       console.error(err); alert('upload failed, try later');
-      //     }
-      //   });
-      // only for repersent, directly jump to post confirm page
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        location.href = 'postconfirm.html';
+        
+        // Get form data
+        const formData = new FormData(form);
+        const images = fileInput.files;
+        const imageUrls = [];
+
+        // Convert images to base64 URLs
+        if (images.length > 0) {
+          for (let i = 0; i < images.length; i++) {
+            const reader = new FileReader();
+            await new Promise((resolve) => {
+              reader.onload = () => {
+                imageUrls.push(reader.result);
+                resolve();
+              };
+              reader.readAsDataURL(images[i]);
+            });
+          }
+        }
+
+        // Prepare the post data
+        const postData = {
+          title: formData.get('title'),
+          description: formData.get('description'),
+          categories: [formData.get('category')],
+          images: imageUrls,
+          exchange_type: "trade", // You can add a field for this if needed
+          condition: "used", // You can add a field for this if needed
+          location: "On Campus" // You can add a field for this if needed
+        };
+
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(postData)
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to create post');
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            alert('Item posted successfully!');
+            location.href = 'postconfirm.html';
+          } else {
+            throw new Error(data.error || 'Failed to create post');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Failed to create post. Please try again later.');
+        }
       });
     })();
   </script>
