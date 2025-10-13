@@ -10,22 +10,93 @@
             <div class="container">
              <h1>Edit Profile</h1>
 
-        <form action="#" method="post">
+        <form id="profileForm" action="http://localhost:3000/api/users/profile" method="put">
             <label>Name</label>
-                <input type="text" name="account_name" value="Amira Adum" required>
+                <input type="text" name="account_name" id="account_name" required>
             <label>Email address</label> 
-                <input type="email" name="email" value="amira.adum@nyu.edu" required>
+                <input type="email" name="email" id="email" pattern=".+@nyu\.edu$" title="Must be an NYU email address" required>
             <label>NYU ID</label>
-                <input type="text" name="nyu_id" value="N1234567" required>
+                <input type="text" name="nyu_id" id="nyu_id" pattern="N[0-9]{7}" title="Must be in format N1234567" required>
             <label>Bio</label>
-                <textarea name="bio" rows="3" maxlength="280">Loves swapping dorm finds.</textarea>
+                <textarea name="bio" id="bio" rows="3" maxlength="280"></textarea>
             <label>Profile Picture</label>
-                <input type="file" name="picture" accept="image/*">
+                <input type="file" name="picture" id="picture" accept="image/*">
 
             <br><br>
             <button type="submit">Save changes</button>
             <a href="profile.html">Cancel</a>
         </form>
+
+        <script>
+            // Fetch and populate user data when page loads
+            document.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    const response = await fetch('http://localhost:3000/api/users/profile');
+                    if (!response.ok) throw new Error('Failed to fetch profile');
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('account_name').value = data.data.account_name || '';
+                        document.getElementById('email').value = data.data.email || '';
+                        document.getElementById('nyu_id').value = data.data.nyu_id || '';
+                        document.getElementById('bio').value = data.data.bio || '';
+                    }
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    alert('Failed to load profile data. Please try again later.');
+                }
+            });
+
+            // Handle form submission
+            document.getElementById('profileForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Validate NYU email
+                const email = document.getElementById('email').value;
+                if (!email.endsWith('@nyu.edu')) {
+                    alert('Please use your NYU email address');
+                    return;
+                }
+
+                // Validate NYU ID format
+                const nyuId = document.getElementById('nyu_id').value;
+                if (!/^N\d{7}$/.test(nyuId)) {
+                    alert('NYU ID must be in the format N1234567');
+                    return;
+                }
+
+                // Prepare the update data
+                const updateData = {
+                    account_name: document.getElementById('account_name').value,
+                    email: email,
+                    nyu_id: nyuId,
+                    bio: document.getElementById('bio').value
+                };
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/users/profile', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to update profile');
+                    }
+
+                    if (data.success) {
+                        alert('Profile updated successfully!');
+                        window.location.href = 'profile.html';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(error.message || 'Failed to update profile. Please try again later.');
+                }
+            });
+        </script>
         </div>
        </div>
     </body>

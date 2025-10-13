@@ -5,6 +5,8 @@ import cors from "cors";
 import bcrypt from "bcrypt";
 import User from "./models/User.js";
 import postRoutes from "./routes/postRoutes.js";
+import roommateRoutes from "./routes/roommateRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -26,6 +28,12 @@ app.get("/", (req, res) => res.send("Backend running!"));
 
 // Post routes
 app.use('/api/posts', postRoutes);
+
+// Roommate routes
+app.use('/api/roommates', roommateRoutes);
+
+// User routes
+app.use('/api/users', userRoutes);
 
 // Error handling middleware (should be after all routes)
 app.use(errorHandler);

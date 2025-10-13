@@ -175,9 +175,9 @@
       </div>
 
       <!-- parameters -->
-      <form id="postForm" class="form" action="/api/posts/roommate" method="post" enctype="multipart/form-data">
+      <form id="postForm" class="form" action="http://localhost:3000/api/roommates" method="post">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">Insert Image</div>
-        <input id="imageInput" type="file" name="image" accept="image/*" hidden />
+        <input id="imageInput" type="file" name="images" accept="image/*" hidden multiple />
 
         <div class="label">Add title...</div>
         <input class="input" type="text" name="title" placeholder="Add title..." required />
@@ -273,26 +273,65 @@
         fileInput.dispatchEvent(new Event('change'));
       });
 
-      // only for repersent 
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Get form data
+        const formData = new FormData(form);
+        const images = fileInput.files;
+        const imageUrls = [];
 
-        location.href = 'postconfirm.html';
+        // Convert images to base64 URLs
+        if (images.length > 0) {
+          for (let i = 0; i < images.length; i++) {
+            const reader = new FileReader();
+            await new Promise((resolve) => {
+              reader.onload = () => {
+                imageUrls.push(reader.result);
+                resolve();
+              };
+              reader.readAsDataURL(images[i]);
+            });
+          }
+        }
+
+        // Prepare the roommate post data
+        const roommateData = {
+          title: formData.get('title'),
+          description: formData.get('description'),
+          images: imageUrls,
+          year: parseFloat(formData.get('year')),
+          placesToLive: formData.get('place_to_live'),
+          onCampus: formData.get('place_to_live').toLowerCase().includes('campus'),
+          region: formData.get('place_to_live'), // Using place_to_live as region for now
+        };
+
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(roommateData)
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create roommate post');
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            alert('Roommate post created successfully!');
+            location.href = 'postconfirm.html';
+          } else {
+            throw new Error(data.error || 'Failed to create roommate post');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert(error.message || 'Failed to create roommate post. Please try again later.');
+        }
       });
-
-      //   form.addEventListener('submit', async (e) => {
-      //     e.preventDefault();
-      //     const fd = new FormData(form);
-      //     try {
-      //       const res = await fetch(form.action, { method:'POST', body:fd, credentials:'same-origin' });
-      //       if (!res.ok) throw new Error('Upload failed');
-      //       const data = await res.json();
-      //       alert('Roommate post created!');
-      //       location.href = 'home.html';
-      //     } catch (err) {
-      //       console.error(err); alert('upload failed, try later。');
-      //     }
-      //   });
     })();
   </script>
 </body>
