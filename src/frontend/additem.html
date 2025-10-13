@@ -175,12 +175,12 @@
       </div>
 
       <!-- image input -->
-      <form id="postForm" class="form" action="/api/posts/item" method="post" enctype="multipart/form-data">
+      <form id="postForm" class="form" action="http://localhost:3000/api/posts" method="post">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
           <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
           Insert Image
         </div>
-        <input id="imageInput" type="file" name="image" accept="image/*" hidden />
+        <input id="imageInput" type="file" name="images" accept="image/*" hidden multiple />
         <!-- post parameters -->
         <div class="label">Add title...</div>
         <input class="input" type="text" name="title" placeholder="Add title..." required />
@@ -274,23 +274,63 @@
         fileInput.dispatchEvent(new Event('change'));
       });
 
-      //   form.addEventListener('submit', async (e) => {
-      //     e.preventDefault();
-      //     const fd = new FormData(form);
-      //     try {
-      //       const res = await fetch(form.action, { method:'POST', body:fd, credentials:'same-origin' });
-      //       if (!res.ok) throw new Error('Upload failed');
-      //       const data = await res.json();
-      //       alert('Item post created!');
-      //       location.href = 'home.html';
-      //     } catch (err) {
-      //       console.error(err); alert('upload failed, try later');
-      //     }
-      //   });
-      // only for repersent, directly jump to post confirm page
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        location.href = 'postconfirm.html';
+        
+        // Get form data
+        const formData = new FormData(form);
+        const images = fileInput.files;
+        const imageUrls = [];
+
+        // Convert images to base64 URLs
+        if (images.length > 0) {
+          for (let i = 0; i < images.length; i++) {
+            const reader = new FileReader();
+            await new Promise((resolve) => {
+              reader.onload = () => {
+                imageUrls.push(reader.result);
+                resolve();
+              };
+              reader.readAsDataURL(images[i]);
+            });
+          }
+        }
+
+        // Prepare the post data
+        const postData = {
+          title: formData.get('title'),
+          description: formData.get('description'),
+          categories: [formData.get('category')],
+          images: imageUrls,
+          exchange_type: "trade", // You can add a field for this if needed
+          condition: "used", // You can add a field for this if needed
+          location: "On Campus" // You can add a field for this if needed
+        };
+
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(postData)
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to create post');
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            alert('Item posted successfully!');
+            location.href = 'postconfirm.html';
+          } else {
+            throw new Error(data.error || 'Failed to create post');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Failed to create post. Please try again later.');
+        }
       });
     })();
   </script>

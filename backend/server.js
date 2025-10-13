@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import cors from "cors"; 
 import bcrypt from "bcrypt";
 import User from "./models/User.js";
+import postRoutes from "./routes/postRoutes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
 
@@ -16,12 +18,17 @@ app.use(express.json());
 
 // connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
+  .then(() => console.log("Connected to MongoDB"))
+  .catch(err => console.error("MongoDB connection error:", err));
 
 // checking backend 
 app.get("/", (req, res) => res.send("Backend running!"));
 
+// Post routes
+app.use('/api/posts', postRoutes);
+
+// Error handling middleware (should be after all routes)
+app.use(errorHandler);
 
 // Route to handle user registration
 app.post("/register", async (req, res) => {
