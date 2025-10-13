@@ -6,14 +6,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CasaConnect</title>
-<link rel="icon" href="../assets/icon.png" type="image/x-icon">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style_revised.css">
+<link rel="stylesheet" href="common_style.css">
 </head>
 
 
 <body id="login-body" class="no-footer">
   <div class="screen">
-    <div class="container">
+    <div class="phone">
       <div class="logo">
         <img src="../assets/Logo.svg" alt="CasaConnect Logo">
         <h1>CasaConnect</h1>
@@ -28,6 +28,7 @@
         you will get data from the form using request.form in Flask
         the /login route will handle the form submission:
         example: /login?email=user@example.com&password=yourpassword
+        how to? You can use Flask-Login for handling user sessions and authentication
         then you will query the database to check if the user exists and if the password matches
         if valid, redirect to home page
         if not, flash an error message and redirect back to login page
