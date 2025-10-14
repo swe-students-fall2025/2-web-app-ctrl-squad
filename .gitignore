@@ -146,3 +146,15 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Node.js dependencies
+node_modules/
+backend/node_modules/
+
+# Node environment files
+backend/.env
+.env
+
+# Build output (optional but useful)
+dist/
+build/
