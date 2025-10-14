@@ -40,6 +40,34 @@ a{
     color: inherit;
 }
 
+input {
+    border: none;
+}
+
+
+textarea {
+  overflow-y: auto;
+  scrollbar-width: none; 
+}
+
+textarea::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+/* when focused, make scrollbar visible */
+textarea:focus::-webkit-scrollbar {
+  width: 5px;
+}
+
+textarea:focus::-webkit-scrollbar-thumb {
+  background: var(--ink-2);
+  border-radius: 5px;
+}
+
+
+
+
 .btn {
     text-decoration: none;
     font-size: larger;
