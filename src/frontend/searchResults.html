@@ -10,7 +10,37 @@
   <link rel="stylesheet" href="common_style.css">
 </head>
 
-<body id="home-body" class="with-footer">
+<style>
+  .post-section-title{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+    gap: 8px;
+  }
+
+  .button-container{
+    margin-left: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .filter-button, .sort-button{
+    border: none;
+    background-color: var(--panel);
+  }
+
+  .filter-icon, .sort-icon{
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    aspect-ratio: 1/1;
+  }
+</style>
+
+<body id="search-results-body" class="with-footer">
   <div class="screen"> 
 
     <div class="footer-nav">
@@ -33,7 +63,7 @@
               <path d="M22 34.5H26V26.5H34V22.5H26V14.5H22V22.5H14V26.5H22V34.5ZM24 44.5C21.2333 44.5 18.6333 43.9833 16.2 42.95C13.7667 41.8833 11.65 40.45 9.85 38.65C8.05 36.85 6.61667 34.7333 5.55 32.3C4.51667 29.8667 4 27.2667 4 24.5C4 21.7333 4.51667 19.1333 5.55 16.7C6.61667 14.2667 8.05 12.15 9.85 10.35C11.65 8.55 13.7667 7.13333 16.2 6.1C18.6333 5.03333 21.2333 4.5 24 4.5C26.7667 4.5 29.3667 5.03333 31.8 6.1C34.2333 7.13333 36.35 8.55 38.15 10.35C39.95 12.15 41.3667 14.2667 42.4 16.7C43.4667 19.1333 44 21.7333 44 24.5C44 27.2667 43.4667 29.8667 42.4 32.3C41.3667 34.7333 39.95 36.85 38.15 38.65C36.35 40.45 34.2333 41.8833 31.8 42.95C29.3667 43.9833 26.7667 44.5 24 44.5ZM24 40.5C28.4667 40.5 32.25 38.95 35.35 35.85C38.45 32.75 40 28.9667 40 24.5C40 20.0333 38.45 16.25 35.35 13.15C32.25 10.05 28.4667 8.5 24 8.5C19.5333 8.5 15.75 10.05 12.65 13.15C9.55 16.25 8 20.0333 8 24.5C8 28.9667 9.55 32.75 12.65 35.85C15.75 38.95 19.5333 40.5 24 40.5Z" fill="#1D1B20"/>
             </svg>
           </div>
-          <div class="footer-label">ADD</div>
+          <div class="footer-label">ADD<br /></div>
         </a>
       </div>
       <div class="footer-item">
@@ -75,18 +105,38 @@
                   <img class="search-icon" src="../assets/search.svg" alt="search icon">
                 </button>
               </form>
-  
-
+<!-- 
               <div class="categories-row">
                 <div class="category-label">Categories</div>
                 <div class="category-label">Free!</div>
                 <div class="category-label">WSQ</div>
                 <div class="category-label">Roommates!</div>
-              </div>
+              </div> -->
             </div>
 
             <div class="post-section">
-              <div class="post-section-title">Curated for You</div>
+              <div class="post-section-title">
+                <h4>Search Results</h1>
+                <div class ="button-container">
+
+                  <!-- Filter and Sort buttons
+                    //not functional yet for sprint 1
+                    how to? You can set up filter and sort functionalities in your Flask backend
+                    For filtering, you can create a route that accepts filter parameters (e.g., category, price range)
+                    and queries the database to return items that match those criteria.
+                    For sorting, you can create a route that accepts a sort parameter (e.g., price ascending/descending, newest first)
+                    and sorts the results accordingly before returning them to the user.  
+                  -->
+
+                  <button class="filter-button">
+                    <img class="filter-icon" src="../assets/filter.svg" alt="filter icon">
+                  </button>
+                  <button class="sort-button">
+                    <img class="sort-icon" src="../assets/sort.svg" alt="sort icon">
+                  </button>
+              </div>
+              </div>
+
               <a href="singlePage.html">
                 <div class="post-card">
                   <div class="post-title">post title</div>
@@ -101,6 +151,22 @@
                   </div>
                 </div>
               </a>
+
+              <a href="singlePage.html">
+                <div class="post-card">
+                  <div class="post-title">post title</div>
+                  <hr class="post-divider">
+                  <div class="post-content-row">
+                    <img class="post-image" src="../assets/icon.png" alt="sampelle image">
+                    <div class="post-meta">
+                      <div class="post-meta-label">username</div>
+                      <div class="post-meta-label">favorites</div>
+                      <div class="post-meta-label">time posted</div>
+                    </div>
+                  </div>
+                </div>
+              </a>
+
             </div>
           </div>
 

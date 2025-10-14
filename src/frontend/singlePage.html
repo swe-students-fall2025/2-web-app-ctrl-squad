@@ -1,53 +1,48 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-<title> 🏡 CasaConnect
-</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CasaConnect</title>
+  <link rel="icon" href="../assets/icon.png" type="image/x-icon">
+  <link rel="stylesheet" href="style_revised.css">
+  <link rel="stylesheet" href="common_style.css">
 </head>
-<body>
-  <div class="screen">
 
-      
-    <h1>Welcome to CasaConnect! 🏡</h1>
+<body id="home-body" class="with-footer">
+  <div class="screen"> 
 
-    <search>
-      <input type="text" placeholder="Search...">
-      <button type="submit" onClick="window.location.href='search.html'">Search</button>
-    </search>
-
-    <div class="search-results">
-    <div class="listing">
-
-    <div>
-        <h2>Status</h2>
-        <h2>Exchange Type</h2>
-        <h2>Title</h2>
-        <hidden>id</hidden>
+    <div class="topbar">
+        <!-- back button -- link smarBack back to home-->
+        <button class="btn-back" type="button" onclick="smartBack()">Back</button>
     </div>
 
-    <a href="profile.html">Username</a><br> <hidden>userID</hidden>
+    <div class="phone">
 
-    <p> posted at: Date</p>
-    <p> Last Updated at: Date</p>
+          <div class="main-content">
+            <div class="post-section">
+              <div class="post-section-title">Curated for You</div>
+              <a href="singlePage.html">
+                <div class="post-card">
+                  <div class="post-title">post title</div>
+                  <hr class="post-divider">
+                  <div class="post-content-row">
+                    <img class="post-image" src="../assets/icon.png" alt="sampelle image">
+                    <div class="post-meta">
+                      <div class="post-meta-label">username</div>
+                      <div class="post-meta-label">favorites</div>
+                      <div class="post-meta-label">time posted</div>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
 
-    <img src="house.jpg" alt="House Image" style="width:300px;height:200px;"><br>
-
-    <div class="details">   
-        <p>Categories</p>
-        <p>Condition: New</p>
-        <p>Location: Area</p>
-        <p>Contact Info: email/phone</p>
-    </div>
-
-    <p>Description of the item goes here. It provides details about the listing, features, and other relevant information.</p>
-
-    <p>number</p><button type="button">Favorite</button> 
-
-    <button type="button" onclick="window.location.href='trade.html'">Trade</button>
-
-    </div>
-    </div>
-
-    <p>© CTRL Squad, 2025</p>
+          <p>© CTRL Squad, 2025</p>
+        </div>
   </div>
 </body>
+
 </html>
