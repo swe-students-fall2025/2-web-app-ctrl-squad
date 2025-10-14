@@ -8,6 +8,10 @@
 # emacs backups
 *~
 
+# node.js
+node_modules/
+npm-debug.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
