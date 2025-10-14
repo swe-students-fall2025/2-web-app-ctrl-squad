@@ -71,16 +71,8 @@
 
              <h1>Edit Profile</h1>
 
-        <form id="profileForm" class="login-form" action="http://localhost:3000/api/users/profile" method="put">
-                <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
-                    <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
-                    Profile Picture
-                    </div>
-
-                <!-- single image upload only for profile picture -->
-                <input id="imageInput" type="file" name="avatar" accept="image/*" hidden />
-
-                <label>Name</label>
+        <form id="profileForm" action="http://localhost:5000/api/users/profile" method="put">
+            <label>Name</label>
                 <input type="text" name="account_name" id="account_name" required>
             <label>Email address</label> 
                 <input type="email" name="email" id="email" pattern=".+@nyu\.edu$" title="Must be an NYU email address" required>
@@ -147,7 +139,7 @@
             // Fetch and populate user data when page loads
             document.addEventListener('DOMContentLoaded', async () => {
                 try {
-                    const response = await fetch('http://localhost:3000/api/users/profile');
+                    const response = await fetch('http://localhost:5000/api/users/profile');
                     if (!response.ok) throw new Error('Failed to fetch profile');
                     
                     const data = await response.json();
@@ -215,7 +207,7 @@
                 }
 
                 try {
-                    const response = await fetch('http://localhost:3000/api/users/profile', {
+                    const response = await fetch('http://localhost:5000/api/users/profile', {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
