@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trade Request</title>
+    <link rel="stylesheet" href="common_style.css" />
+
+    <style>
+        body.no-footer .phone {
+            height: 100vh;
+            padding-bottom: 28px;
+        }
+
+        .phone {
+            padding-top: 28px;
+        }
+
+        .wrap {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            margin-top: 40px;
+        }
+
+
+        .skel {
+            width: 100%;
+            background: #e6e6e6;
+            border-radius: 8px;
+            padding: 12px;
+            color: #606060;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .img-skel {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #111;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .form-block {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .field {
+            width: 100%;
+        }
+
+        .field-label {
+            font-weight: 700;
+            margin: 0 0 6px 0;
+        }
+
+        .select-wrap {
+            position: relative;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            background: #e6e6e6;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .select-control {
+            appearance: none;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: transparent;
+            padding: 0 54px 0 14px;
+            font: inherit;
+            color: #606060;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .caret-block {
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 46px;
+            background: #111;
+            display: grid;
+            place-items: center;
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+            pointer-events: none;
+        }
+
+        .select-caret {
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* submit button */
+        .btn-primary {
+            display: inline-block;
+            background: #000;
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: 2px solid #000;
+            font-weight: 800;
+            font-size: 16px;
+            text-align: center;
+            min-width: 240px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body class="no-footer">
+    <div class="screen">
+        <main class="phone">
+            <div class="topbar">
+                <button class="btn-back" type="button" onclick="smartBack()">Back</button>
+            </div>
+            <div class="wrap">
+
+                <div class="form-block">
+                    <div class="img-skel">item<br />picture</div>
+                    <div class="skel">item category</div>
+                    <div class="skel">receiver account name</div>
+
+                    <div class="field">
+                        <div class="field-label">Time sent</div>
+                        <div class="select-wrap">
+                            <select id="timeSent" class="select-control" aria-label="time sent">
+                                <option value="" selected disabled>time sent</option>
+                                <option value="1">01:00</option>
+                                <option value="2">02:00</option>
+                                <option value="3">03:00</option>
+                                <option value="4">04:00</option>
+                                <option value="5">05:00</option>
+                                <option value="6">06:00</option>
+                                <option value="7">07:00</option>
+                                <option value="8">08:00</option>
+                                <option value="9">09:00</option>
+                                <option value="10">10:00</option>
+                                <option value="11">11:00</option>
+                                <option value="12">12:00</option>
+                                <option value="13">13:00</option>
+                                <option value="14">14:00</option>
+                                <option value="15">15:00</option>
+                                <option value="16">16:00</option>
+                                <option value="17">17:00</option>
+                                <option value="18">18:00</option>
+                                <option value="19">19:00</option>
+                                <option value="20">20:00</option>
+                                <option value="21">21:00</option>
+                                <option value="22">22:00</option>
+                                <option value="23">23:00</option>
+                                <option value="24">24:00</option>
+                            </select>
+                            <div class="caret-block">
+                                <!-- category svg -->
+                                <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+                            </div>
+                        </div>
+                    </div>
+
+                    <a class="btn-primary" href="tradecomfirm.html">Request Complete</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- smart back -->
+    <script>
+        function smartBack() {
+            const params = new URLSearchParams(location.search);
+            const from = params.get("from");
+            const base = location.pathname.replace(/[^\/]+$/, "");
+            const map = { profile: "profile_revised.html", home: "home.html", posts: "search.html" };
+
+            
+            if (from && map[from]) { location.href = base + map[from]; return; }
+
+            
+            const sameOriginRef =
+                document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false } })();
+            const isAdd = (url) => /(additem\.html|addroommate\.html)$/.test(new URL(url, location.origin).pathname);
+
+            if (sameOriginRef && document.referrer && !isAdd(document.referrer)) {
+                location.href = document.referrer; return;
+            }
+
+            
+            const lastNonAdd = sessionStorage.getItem('lastNonAdd');
+            if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) {
+                location.href = lastNonAdd; return;
+            }
+
+            
+            location.href = base + "home.html";
+        }
+    </script>
+</body>
+
+</html>

@@ -11,48 +11,35 @@ import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
 
-
-// setting up the app to read data from a form
 const app = express();
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// connect to MongoDB
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to MongoDB"))
   .catch(err => console.error("MongoDB connection error:", err));
 
-// checking backend 
+// Health check route
 app.get("/", (req, res) => res.send("Backend running!"));
 
-// Post routes
-app.use('/api/posts', postRoutes);
+// Routes
+app.use("/api/posts", postRoutes);
+app.use("/api/roommates", roommateRoutes);
+app.use("/api/users", userRoutes);
 
-// Roommate routes
-app.use('/api/roommates', roommateRoutes);
-
-// User routes
-app.use('/api/users', userRoutes);
-
-// Error handling middleware (should be after all routes)
-app.use(errorHandler);
-
-// Route to handle user registration
+// Registration route
 app.post("/register", async (req, res) => {
   try {
     const { NetID, email, username, password } = req.body;
-
-    // check required fields
     if (!NetID || !email || !username || !password) {
       return res.status(400).json({ error: "All fields are required." });
     }
 
-    //normalize inputs
     const normEmail = String(email).trim().toLowerCase();
     const normUsername = String(username).trim();
 
-    // check if email or username already exists
     const existingUser = await User.findOne({
       $or: [{ email: normEmail }, { account_name: normUsername }],
     });
@@ -60,7 +47,6 @@ app.post("/register", async (req, res) => {
       return res.status(409).json({ error: "Email or username already in use." });
     }
 
-    // hash password and create user
     const hash = await bcrypt.hash(password, 12);
     const user = await User.create({
       nyu_id: NetID,
@@ -69,7 +55,6 @@ app.post("/register", async (req, res) => {
       password: hash,
     });
 
-    // respond (never send password)
     return res.status(201).json({
       id: user._id,
       email: user.email,
@@ -84,7 +69,9 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// start server
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`✅ Server running on port ${process.env.PORT || 3000}`);
-});
+// Error handling middleware
+app.use(errorHandler);
+
+//  Only ONE listen call
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
