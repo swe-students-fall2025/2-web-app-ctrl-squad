@@ -10,7 +10,7 @@
             <div class="container">
              <h1>Edit Profile</h1>
 
-        <form id="profileForm" action="http://localhost:3000/api/users/profile" method="put">
+        <form id="profileForm" action="http://localhost:5000/api/users/profile" method="put">
             <label>Name</label>
                 <input type="text" name="account_name" id="account_name" required>
             <label>Email address</label> 
@@ -31,7 +31,7 @@
             // Fetch and populate user data when page loads
             document.addEventListener('DOMContentLoaded', async () => {
                 try {
-                    const response = await fetch('http://localhost:3000/api/users/profile');
+                    const response = await fetch('http://localhost:5000/api/users/profile');
                     if (!response.ok) throw new Error('Failed to fetch profile');
                     
                     const data = await response.json();
@@ -74,7 +74,7 @@
                 };
 
                 try {
-                    const response = await fetch('http://localhost:3000/api/users/profile', {
+                    const response = await fetch('http://localhost:5000/api/users/profile', {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
