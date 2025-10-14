@@ -1,0 +1,79 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CasaConnect</title>
+<link rel="icon" href="../assets/icon.png" type="image/x-icon">
+<link rel="stylesheet" href="style_revised.css">
+<link rel="stylesheet" href="common_style.css">
+</head>
+
+
+<body id="reset-body" class="no-footer">
+  <div class="screen">
+    <div class="phone">
+
+      <div class="topbar">
+        <button class="btn-back" type="button" onclick="window.location.href='home.html'">Back</button>
+      </div>
+
+
+      <div class="logo">
+        <img src="../assets/Logo.svg" alt="CasaConnect Logo">
+        <h1>CasaConnect</h1>
+      </div>
+
+
+         <!-- change below action to/reset route and method to POST
+        wire below with the database by
+        1. Creating a user model
+        2. Setting up a reset route
+        3. Implementing authentication logic
+
+        you will get data from the form using request.form in Flask
+        the /reset route will handle the form submission:
+        example: /reset?email=user@example.com
+        then you will query the database to check if the user exists with that email
+        if valid, send a password reset link to the user's email
+        how? You can use a library like Flask-Mail to send the email
+        if the email is sent successfully, flash a success message
+        for sprint 1 simplicity, assume the email is always sent and sent successfully and the verification is done
+        then update the user's password in the database
+
+        and redirect to login page with a success message
+        if not, flash an error message and redirect back to reset page
+      -->
+
+      <form id="reset-form" class="login-form" action="/reset" method="POST">
+        <label for="email" required>Email:</label>
+        <input type="email" id="email" name="email" required>
+        <input type="submit" value="Send Reset Link">
+      </form>
+
+      <!-- Pop-up screen for verification code and new password -->
+      <!-- For sprint 1 simplicity, assume the verification is always successful -->
+      <!-- In sprint 2, implement the verification logic -->
+      <!-- After successful verification, show the new password form -->  
+
+      <form id="verification" class="login-form" action="/verify" method="POST">
+        <label for="code" required>Verification Code:</label>
+        <input type="text" id="code" name="code" required>
+        <input type="submit" value="Verify">
+      </form>
+
+      <form id="reset_password" class="login-form" action="/reset_password" method="POST">
+        <label for="new_password" required>New Password:</label>
+        <input type="password" id="new_password" name="new_password" required>
+        <label for="confirm_password" required>Confirm Password:</label>
+        <input type="password" id="confirm_password" name="confirm_password" required>
+        <input type="submit" value="Reset Password">
+      </form>
+
+      <p>© CTRL Squad, 2025</p>
+    </div>
+  </div>
+</body>
+</html>

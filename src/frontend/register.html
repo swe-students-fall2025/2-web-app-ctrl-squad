@@ -1,0 +1,60 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CasaConnect</title>
+<link rel="icon" href="../assets/icon.png" type="image/x-icon">
+<link rel="stylesheet" href="style_revised.css">
+<link rel="stylesheet" href="common_style.css">
+</head>
+
+<body id="register-body" class="no-footer">
+  <div class="screen">
+    <div class="phone">
+      <div class="topbar">
+        <button class="btn-back" type="button" onclick="window.location.href='login.html'">Back</button>
+      </div>
+
+      <div class="logo">
+        <img src="../assets/Logo.svg" alt="CasaConnect Logo">
+        <h1>CasaConnect</h1>
+      </div>
+
+         <!-- change below action to/register route and method to POST
+        wire below with the database by
+        1. Creating a user model
+        2. Setting up a register route
+        3. Implementing authentication logic
+
+        you will get data from the form using request.form in Flask
+        the /register route will handle the form submission:
+        example: /register?NetID=yourNetID&email=user@example.com&username=yourusername&password=yourpassword
+        then you will query the database to check if the user already exists
+        if not, create a new user and store in the database
+        if the user already exists, flash an error message and redirect back to register page
+      -->
+      <form id="register-form" action="http://localhost:5000/register" method="POST">
+
+        <label for="NetID">Net ID:</label>
+        <input type="text" id="NetID" name="NetID" required>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <input type="submit" value="Register">
+      </form>
+
+      <p>© CTRL Squad, 2025</p>
+    </div>
+  </div>
+</body>
+</html>

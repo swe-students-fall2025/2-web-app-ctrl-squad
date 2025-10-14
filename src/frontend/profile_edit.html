@@ -1,0 +1,232 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - CasaConnect</title>
+    <link rel="stylesheet" href="style_revised.css">
+    <link rel="stylesheet" href="common_style.css">
+    </head>
+
+    <style>
+     .dropzone {
+      border-radius: 10px;
+      background: var(--drop);
+      height: 260px;
+      display: grid;
+      text-align: center;
+      place-items: center;
+      border: 3px solid #6aa2ff;
+      color: #000;
+      font-weight: 800;
+      margin-bottom: 16px;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .dropzone.preview {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dropzone .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(17, 17, 17, .85);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+
+    .btn-post {
+      background: #111;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 36px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    </style>
+
+
+    <body class="no-footer">
+        <div class="screen">
+            <div class="phone">
+
+                      <div class="topbar">
+        <button class="btn-back" type="button" onclick="window.location.href='profile.html'">Back</button>
+      </div>
+
+
+             <h1>Edit Profile</h1>
+
+        <form id="profileForm" action="http://localhost:5000/api/users/profile" method="put">
+            <label>Name</label>
+                <input type="text" name="account_name" id="account_name" required>
+            <label>Email address</label> 
+                <input type="email" name="email" id="email" pattern=".+@nyu\.edu$" title="Must be an NYU email address" required>
+            <label>NYU ID</label>
+                <input type="text" name="nyu_id" id="nyu_id" pattern="N[0-9]{8}" title="Must be in format N12345678" required>
+            <label>Bio</label>
+                <textarea name="bio" id="bio" rows="3" maxlength="280"></textarea>
+        
+            <button  class="btn-post" type="submit">Save changes</button>
+        </form>
+
+        
+
+        <script>
+            // --- Image upload logic ---
+            (function () {
+              const dropzone = document.getElementById('dropzone');
+              const fileInput = document.getElementById('imageInput');
+
+              const MAX_MB = 5;
+              const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+
+              const openPicker = () => fileInput.click();
+              dropzone.addEventListener('click', openPicker);
+              dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
+
+              fileInput.addEventListener('change', () => {
+                const file = fileInput.files && fileInput.files[0];
+                if (!file) return;
+                if (!ACCEPTED.includes(file.type)) { alert('please upload png/jpg/jpeg/webp/gif'); fileInput.value = ''; return; }
+                if (file.size / (1024 * 1024) > MAX_MB) { alert('maximum 5MB'); fileInput.value = ''; return; }
+                const reader = new FileReader();
+                reader.onload = () => {
+                  dropzone.classList.add('preview');
+                  dropzone.innerHTML = `
+                    <img src="${reader.result}" alt="preview" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
+                    <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
+                  `;
+                  dropzone.querySelector('.remove-btn').addEventListener('click', () => {
+                    dropzone.classList.remove('preview');
+                    dropzone.innerHTML = 'Profile Picture';
+                    fileInput.value = '';
+                  });
+                };
+                reader.readAsDataURL(file);
+              });
+
+              ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+                e.preventDefault(); e.stopPropagation(); dropzone.style.outline = '3px solid #6aa2ff';
+              }));
+              ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+                e.preventDefault(); e.stopPropagation(); dropzone.style.outline = 'none';
+              }));
+              dropzone.addEventListener('drop', e => {
+                const file = e.dataTransfer.files && e.dataTransfer.files[0];
+                if (!file) return;
+                const dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files;
+                fileInput.dispatchEvent(new Event('change'));
+              });
+            })();
+        </script>
+
+        <script>
+            // Fetch and populate user data when page loads
+            document.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    const response = await fetch('http://localhost:5000/api/users/profile');
+                    if (!response.ok) throw new Error('Failed to fetch profile');
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('account_name').value = data.data.account_name || '';
+                        document.getElementById('email').value = data.data.email || '';
+                        document.getElementById('nyu_id').value = data.data.nyu_id || '';
+                        document.getElementById('bio').value = data.data.bio || '';
+                        // If user has a profile image, show it in dropzone
+                        if (data.data.profile_image) {
+                            const dropzone = document.getElementById('dropzone');
+                            dropzone.classList.add('preview');
+                            dropzone.innerHTML = `
+                                <img src="${data.data.profile_image}" alt="preview" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
+                                <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
+                            `;
+                            dropzone.querySelector('.remove-btn').addEventListener('click', () => {
+                                dropzone.classList.remove('preview');
+                                dropzone.innerHTML = 'Profile Picture';
+                                document.getElementById('imageInput').value = '';
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    alert('Failed to load profile data. Please try again later.');
+                }
+            });
+
+            // Handle form submission
+            document.getElementById('profileForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Validate NYU email
+                const email = document.getElementById('email').value;
+                if (!email.endsWith('@nyu.edu')) {
+                    alert('Please use your NYU email address');
+                    return;
+                }
+
+                // Validate NYU ID format
+                const nyuId = document.getElementById('nyu_id').value;
+                if (!/^N\d{8}$/.test(nyuId)) {
+                    alert('NYU ID must be in the format N12345678');
+                    return;
+                }
+
+                // Prepare the update data
+                const updateData = {
+                    account_name: document.getElementById('account_name').value,
+                    email: email,
+                    nyu_id: nyuId,
+                    bio: document.getElementById('bio').value
+                };
+
+                // Handle profile image (convert to base64 if selected)
+                const fileInput = document.getElementById('imageInput');
+                const file = fileInput.files && fileInput.files[0];
+                if (file) {
+                    updateData.profile_image = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(file);
+                    });
+                }
+
+                try {
+                    const response = await fetch('http://localhost:5000/api/users/profile', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to update profile');
+                    }
+
+                    if (data.success) {
+                        alert('Profile updated successfully!');
+                        window.location.href = 'profile.html';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(error.message || 'Failed to update profile. Please try again later.');
+                }
+            });
+        </script>
