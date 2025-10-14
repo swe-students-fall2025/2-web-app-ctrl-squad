@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>My Posts - CasaConnect</title>
+        <link rel="stylesheet" href="style_revised.css"/>
+        <link rel="stylesheet" href="common_style.css"/>
+    </head>
+
+    <body>
+        <div class="screen">
+            <div class="phone profile-posts">
+                <h1>My Posts</h1>
+
+                <div class="list">
+                    <article class="post-card">
+                        <div class="post-header">
+                            <strong>Lamp</strong> 
+                            <div class="badges">
+
+                            <span class="badge">Good</span>
+                            <span class="badge">Available</span>
+                            </div>
+                            </div>
+                        <p class="post-body">Simple desk lamp.</p>
+                        <div class="actions">
+
+                            <a class="btn secondary" href="singlePage.html?id=1">View</a>
+                
+                            <form class="inline" action="/item/1/delete" method="post" onsubmit="return confirm('Delete this post?')">
+                            <button class="btn btn-danger" type="submit">Delete</button>
+                </form>
+            </div>
+            </article>
+
+            <article class="post-card">
+                        <div class="post-header">
+                            <strong>Chair</strong> 
+                            <div class="badges">
+
+                            <span class="badge">Like new</span>
+                            <span class="badge">Exchanged</span>
+                            </div>
+                            </div>
+                        <p class="post-body">Foldable chair.</p>
+                        <div class="actions">
+
+                            <a class="btn secondary" href="singlePage.html?id=2">View</a>
+                
+                            <form class="inline" action="/item/2/delete" method="post" onsubmit="return confirm('Delete this post?')">
+                            <button class="btn btn-danger" type="submit">Delete</button>
+                </form>
+            </div>
+            </article>
+        </div>
+        <p class="muted">You haven’t posted anything yet.</p>
+        <a class="btn block mt-2" href="additem.html">Create a post</a>
+        </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,53 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CasaConnect</title>
+<link rel="stylesheet" href="style_revised.css">
+<link rel="stylesheet" href="common_style.css">
+</head>
+
+
+<body id="login-body" class="no-footer">
+  <div class="screen">
+    <div class="phone">
+      <div class="logo">
+        <img src="../assets/Logo.svg" alt="CasaConnect Logo">
+        <h1>CasaConnect</h1>
+      </div>
+
+      <!-- change below action to/login route and method to POST 
+        wire below with the database by
+        1. Creating a user model
+        2. Setting up a login route
+        3. Implementing authentication logic
+
+        you will get data from the form using request.form in Flask
+        the /login route will handle the form submission:
+        example: /login?email=user@example.com&password=yourpassword
+        how to? You can use Flask-Login for handling user sessions and authentication
+        then you will query the database to check if the user exists and if the password matches
+        if valid, redirect to home page
+        if not, flash an error message and redirect back to login page
+      -->
+      <form id="login-form" class="login-form" action="/login" method="POST">
+        <label for="email" required>Email:</label>
+        <input type="email" id="email" name="email" required>
+        <label for="password" required>Password:</label>
+        <input type="password" id="password" name="password" required>
+        <input type="submit" value="Login">
+      </form>
+
+      <div class="bottom-links">
+        <a class="login-link" href="reset.html">Forgot Password?</a>
+        <a class="login-link" href="register.html">Create Account</a>
+      </div>
+
+      <p>© CTRL Squad, 2025</p>
+    </div>
+  </div>
+</body>
+</html>
