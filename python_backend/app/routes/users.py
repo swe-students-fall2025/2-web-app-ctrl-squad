@@ -1,8 +1,23 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from app.models.user import User
+from app import db
 
 bp = Blueprint('users', __name__, url_prefix='/api/users')
+
+@bp.route('/')
+@bp.route('')
+def list_users():
+    users = list(db.users.find())
+    # Convert ObjectId to string for JSON serialization
+    for user in users:
+        user['_id'] = str(user['_id'])
+    return jsonify(users)
+
+@bp.route('/collections')
+def list_collections():
+    collections = db.list_collection_names()
+    return jsonify(collections)
 
 @bp.route('/profile', methods=['GET'])
 @login_required
