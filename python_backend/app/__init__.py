@@ -11,7 +11,13 @@ load_dotenv()
 
 # Create Flask app
 app = Flask(__name__)
-CORS(app)
+CORS(app, 
+     resources={r"/api/*": {
+         "origins": ["http://127.0.0.1:5500", "http://localhost:5500"],
+         "supports_credentials": True,
+         "allow_headers": ["Content-Type", "Authorization"],
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+     }})
 
 # Configure app
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -37,7 +43,7 @@ login_manager.login_view = 'auth.login'
 
 # Import routes
 from app.routes import auth, posts, roommates, trades, users
-app.register_blueprint(auth.bp)  # Auth routes at root level
+app.register_blueprint(auth.bp)  # Auth routes (using url_prefix from blueprint)
 app.register_blueprint(posts.bp, url_prefix='/api')  # Posts under /api
 app.register_blueprint(roommates.bp, url_prefix='/api')  # Roommates under /api
 app.register_blueprint(trades.bp, url_prefix='/api')  # Trades under /api

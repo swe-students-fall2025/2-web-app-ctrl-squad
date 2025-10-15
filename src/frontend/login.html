@@ -33,7 +33,7 @@
         if valid, redirect to home page
         if not, flash an error message and redirect back to login page
       -->
-      <form id="login-form" class="login-form" action="/login" method="POST">
+      <form id="login-form" class="login-form" onsubmit="handleLogin(event)">
         <label for="email" required>Email:</label>
         <input type="email" id="email" name="email" required>
         <label for="password" required>Password:</label>
@@ -48,6 +48,41 @@
 
       <p>© CTRL Squad, 2025</p>
     </div>
+  </div>
+
+  <script>
+    async function handleLogin(event) {
+      event.preventDefault();
+      
+      const formData = {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          alert('Login successful!');
+          window.location.href = 'home.html';
+        } else {
+          alert(data.error || 'Login failed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Login failed. Please try again.');
+      }
+    }
+  </script>
   </div>
 </body>
 </html>
