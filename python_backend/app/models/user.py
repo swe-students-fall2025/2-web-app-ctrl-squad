@@ -19,15 +19,20 @@ class User(UserMixin):
     def username(self):
         return self.user_data.get('username')
     
+    @property
+    def nyu_id(self):
+        return self.user_data.get('nyu_id')
+    
     def check_password(self, password):
         return check_password_hash(self.user_data.get('password'), password)
     
     @staticmethod
-    def create_user(email, username, password):
+    def create_user(email, username, password, nyu_id=None):
         user_data = {
             'email': email,
             'username': username,
             'password': generate_password_hash(password),
+            'nyu_id': nyu_id,
             'posts': [],
             'roommates': [],
             'trades': []
@@ -44,4 +49,9 @@ class User(UserMixin):
     @staticmethod
     def get_by_email(email):
         user_data = db.users.find_one({'email': email})
+        return User(user_data) if user_data else None
+        
+    @staticmethod
+    def get_by_nyu_id(nyu_id):
+        user_data = db.users.find_one({'nyu_id': nyu_id})
         return User(user_data) if user_data else None

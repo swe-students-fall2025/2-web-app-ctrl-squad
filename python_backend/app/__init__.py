@@ -36,11 +36,12 @@ login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 
 # Import routes
-from app.routes import auth, posts, roommates, trades
+from app.routes import auth, posts, roommates, trades, users
 app.register_blueprint(auth.bp)  # Auth routes at root level
 app.register_blueprint(posts.bp, url_prefix='/api')  # Posts under /api
 app.register_blueprint(roommates.bp, url_prefix='/api')  # Roommates under /api
 app.register_blueprint(trades.bp, url_prefix='/api')  # Trades under /api
+app.register_blueprint(users.bp)  # Users routes (already has url_prefix in blueprint)
 
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5000))
