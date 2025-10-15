@@ -2,9 +2,9 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models.user import User
 
-bp = Blueprint('auth', __name__)
+bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
-@bp.route('/register', methods=['POST'])
+@bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     data = request.get_json()
     print("Received registration data:", data)  # Debug print
@@ -33,18 +33,36 @@ def register():
     login_user(user)
     return jsonify({'message': 'Registration successful', 'user': {'id': user.id, 'email': user.email, 'username': user.username}}), 201
 
-@bp.route('/login', methods=['POST'])
+@bp.route('/login', methods=['POST', 'OPTIONS'])
 def login():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     data = request.get_json()
+    print("Received login data:", data)  # Debug print
     
     if not all(k in data for k in ('email', 'password')):
+        print("Missing required fields")  # Debug print
         return jsonify({'error': 'Missing required fields'}), 400
     
     user = User.get_by_email(data['email'])
-    if user and user.check_password(data['password']):
-        login_user(user)
-        return jsonify({'message': 'Login successful', 'user': {'id': user.id, 'email': user.email, 'username': user.username}})
+    print("Found user:", user.user_data if user else None)  # Debug print
     
+    if user:
+        print("Stored password hash:", user.user_data.get('password'))
+        print("Checking password:", data['password'])
+        if user.check_password(data['password']):
+            print("Password check succeeded")
+            login_user(user)
+            return jsonify({'message': 'Login successful', 'user': {'id': user.id, 'email': user.email, 'username': user.username}})
+        else:
+            print("Password check failed")
+    
+    if not user:
+        print("User not found")  # Debug print
+        return jsonify({'error': 'Invalid email or password'}), 401
+    
+    print("Password incorrect")  # Debug print
     return jsonify({'error': 'Invalid email or password'}), 401
 
 @bp.route('/logout', methods=['POST'])
