@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CasaConnect — Item Post Detail</title>
+  <link rel="stylesheet" href="common_style.css" />
+
+  <style>
+    .phone {
+      padding-top: 28px;
+    }
+
+    
+    .after-topbar {
+      margin-top: 0;
+    }
+
+    .wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skel-line {
+      background: #e6e6e6;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #111;
+      font-weight: 700;
+    }
+
+    
+    .img-skel {
+      width: 100%;
+      height: 320px;
+      background: #d9d9d9;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      color: #111;
+      text-align: center;
+    }
+
+    .block {
+      background: #e6e6e6;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #111;
+    }
+
+    .block.title {
+      font-weight: 700;
+    }
+
+    
+    .block.desc {
+      min-height: 200px;
+      line-height: 1.5;
+      width: 100%;
+    }
+
+    .meta-small {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .btn-action {
+      text-decoration: none;
+      color: #fff;
+      background: #000;
+      border: 2px solid #000;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-weight: 800;
+      font-size: 16px;
+      text-align: center;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .like-badge {
+      font-weight: 800;
+    }
+
+    @media (max-width: 360px) {
+      .img-skel {
+        height: 320px;
+      }
+    }
+  </style>
+</head>
+
+<body class="no-footer">
+  <div class="screen">
+    <main class="phone">
+      <div class="topbar">
+        <button class="btn-back" type="button" onclick="smartBack()">Back</button>
+      </div>
+
+     
+      <div class="after-topbar">
+        <div class="wrap">
+          <!-- username -->
+          <div class="skel-line">username</div>
+
+          <!-- image -->
+          <div class="img-skel">Image</div>
+
+          <!-- title & description -->
+          <div class="block title">Post title</div>
+          <div class="block desc">Description……</div>
+
+          
+          <div class="meta-small">Last edited &lt;time&gt; &lt;IP&gt;</div>
+
+          
+          <div class="actions">
+            <!-- favorites -->
+            <button class="btn-action" id="favBtn" type="button">
+              <span>favorites</span>
+              <span class="like-badge" id="likeCount">(0)</span>
+            </button>
+
+            <!-- exchange -->
+            <a class="btn-action" href="request_sent.html">exchange</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>// Smart back: go to previous page, or fallback to home.html
+    function smartBack() {
+      if (document.referrer && document.referrer !== location.href) {
+        history.back();
+      } else {
+        const base = location.pathname.replace(/[^\/]+$/, "");
+        location.href = base + "home.html";
+      }
+    }
+
+    
+    function applyTopbarOffset() {
+      const topbar = document.querySelector('.topbar');
+      const after = document.querySelector('.after-topbar');
+      if (!topbar || !after) return;
+      const h = Math.ceil(topbar.getBoundingClientRect().height);
+      const extra = 8; // extra breathing space
+      after.style.marginTop = (h + extra) + 'px';
+    }
+    window.addEventListener('load', applyTopbarOffset);
+    window.addEventListener('resize', applyTopbarOffset);
+
+    // replace with API call when backend is ready
+    (function setupLike() {
+      const btn = document.getElementById('favBtn');
+      const countEl = document.getElementById('likeCount');
+      let count = 0;
+      btn.addEventListener('click', () => {
+        count += 1;
+        countEl.textContent = `(${count})`;
+      });
+    })();
+  </script>
+</body>
+
+</html>

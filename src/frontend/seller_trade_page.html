@@ -178,7 +178,7 @@
                         </div>
                     </div>
 
-                    <a class="btn-primary" href="tradecomfirm.html">Request Complete</a>
+                    <a class="btn-primary" href="requestComplete.html">Request Complete</a>
                 </div>
             </div>
         </main>
@@ -190,7 +190,7 @@
             const params = new URLSearchParams(location.search);
             const from = params.get("from");
             const base = location.pathname.replace(/[^\/]+$/, "");
-            const map = { profile: "profile_revised.html", home: "home.html", posts: "search.html" };
+            const map = { profile: "profile.html", home: "home.html", posts: "search.html" };
 
             
             if (from && map[from]) { location.href = base + map[from]; return; }
@@ -211,7 +211,7 @@
             }
 
             
-            location.href = base + "home.html";
+            location.href = base + "profile.html";
         }
     </script>
 </body>
