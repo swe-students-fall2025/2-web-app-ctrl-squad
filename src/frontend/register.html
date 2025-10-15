@@ -36,13 +36,13 @@
         if not, create a new user and store in the database
         if the user already exists, flash an error message and redirect back to register page
       -->
-      <form id="register-form" class="login-form" action="http://localhost:5000/register" method="POST">
+      <form id="register-form" class="login-form" onsubmit="handleRegister(event)">
 
         <label for="NetID">Net ID:</label>
         <input type="text" id="NetID" name="NetID" required>
 
         <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
+        <input type="email" id="email" name="email" pattern=".+@nyu\.edu$" title="Must be an NYU email address" required>
 
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>
@@ -56,5 +56,40 @@
       <p>© CTRL Squad, 2025</p>
     </div>
   </div>
+
+  <script>
+    async function handleRegister(event) {
+      event.preventDefault();
+      
+      const formData = {
+        NetID: document.getElementById('NetID').value,
+        email: document.getElementById('email').value,
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const response = await fetch('http://localhost:5000/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          alert('Registration successful!');
+          window.location.href = 'login.html';
+        } else {
+          alert(data.error || 'Registration failed. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Registration failed. Please try again.');
+      }
+    }
+  </script>
 </body>
 </html>

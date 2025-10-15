@@ -7,9 +7,18 @@ bp = Blueprint('auth', __name__)
 @bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
+    print("Received registration data:", data)  # Debug print
     
-    if not all(k in data for k in ('email', 'username', 'password')):
+    if not all(k in data for k in ('email', 'username', 'password', 'NetID')):
         return jsonify({'error': 'Missing required fields'}), 400
+    
+    # Validate NYU email
+    if not data['email'].endswith('@nyu.edu'):
+        return jsonify({'error': 'Must use an NYU email address'}), 400
+    
+    # Validate NetID format
+    if not (data['NetID'].startswith('N') and len(data['NetID']) == 8):
+        return jsonify({'error': 'NetID must be in format N1234567'}), 400
     
     if User.get_by_email(data['email']):
         return jsonify({'error': 'Email already registered'}), 400
@@ -17,7 +26,8 @@ def register():
     user = User.create_user(
         email=data['email'],
         username=data['username'],
-        password=data['password']
+        password=data['password'],
+        nyu_id=data['NetID']
     )
     
     login_user(user)
