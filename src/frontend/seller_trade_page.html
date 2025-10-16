@@ -26,7 +26,6 @@
             margin-top: 40px;
         }
 
-
         .skel {
             width: 100%;
             background: #e6e6e6;
@@ -111,7 +110,6 @@
             display: block;
         }
 
-        /* submit button */
         .btn-primary {
             display: inline-block;
             background: #000;
@@ -152,17 +150,73 @@
             pointer-events: none;
         }
 
-        .btn-danger{
-            background:#c93b3b;
-            color:#fff;
+        .btn-danger {
+            background: #c93b3b;
+            color: #fff;
         }
 
-        .btn-great{
+        .btn-great {
             background: #62905e;
             color: #fff;
         }
-        .muted{ color:var(--ink-2); text-align:center; }
 
+        .muted {
+            color: var(--ink-2);
+            text-align: center;
+        }
+
+        /* ===== Popup styles ===== */
+        .popup {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, .4);
+        }
+
+        .popup-content {
+            background: #fff;
+            width: min(92vw, 360px);
+            margin: 10% auto;
+            padding: 18px;
+            border: 1px solid #888;
+            border-radius: 12px;
+        }
+
+        .popup-content label {
+            font-weight: 700;
+            display: block;
+            text-align: left;
+            margin-bottom: 6px;
+        }
+
+        .popup-content textarea {
+            width: 100%;
+            height: 60px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 8px;
+            resize: none;
+            box-sizing: border-box;
+        }
+
+        .popup-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .btn-action {
+            color: #fff;
+            background: #000;
+            border: 2px solid #000;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-weight: 800;
+            text-align: center;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -172,94 +226,92 @@
             <div class="topbar">
                 <button class="btn-back" type="button" onclick="smartBack()">Back</button>
             </div>
-            <div class="wrap">
 
+            <div class="wrap">
                 <div class="form-block">
                     <div class="img-skel">item<br />picture</div>
                     <a class="skel" href="user_profile.html">receiver account name</a>
                     <div class="skel">item category</div>
                     <div class="skel">item Description</div>
 
-                    <!-- 
-
-                                        <div class="field">
-                        <div class="field-label">Time sent</div>
-                        <div class="select-wrap">
-                            <select id="timeSent" class="select-control" aria-label="time sent">
-                                <option value="" selected disabled>time sent</option>
-                                <option value="1">01:00</option>
-                                <option value="2">02:00</option>
-                                <option value="3">03:00</option>
-                                <option value="4">04:00</option>
-                                <option value="5">05:00</option>
-                                <option value="6">06:00</option>
-                                <option value="7">07:00</option>
-                                <option value="8">08:00</option>
-                                <option value="9">09:00</option>
-                                <option value="10">10:00</option>
-                                <option value="11">11:00</option>
-                                <option value="12">12:00</option>
-                                <option value="13">13:00</option>
-                                <option value="14">14:00</option>
-                                <option value="15">15:00</option>
-                                <option value="16">16:00</option>
-                                <option value="17">17:00</option>
-                                <option value="18">18:00</option>
-                                <option value="19">19:00</option>
-                                <option value="20">20:00</option>
-                                <option value="21">21:00</option>
-                                <option value="22">22:00</option>
-                                <option value="23">23:00</option>
-                                <option value="24">24:00</option>
-                            </select>
-                            <div class="caret-block">
-                                <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
-                            </div>
-                        </div>
-                    </div>
-
-                     
-                    -->
-
-
-                     <div class="buyer-trade-actions">
-                        <div class="btn-trade btn-danger" href="requestReject.html">Reject Trade</div>
-                        <a class="btn-trade btn-great" href="requestAccept.html">Accept Trade</a>
+                    <div class="buyer-trade-actions">
+                        <a class="btn-trade btn-danger" href="requestReject.html">Reject Trade</a>
+                        <button id="acceptBtn" class="btn-trade btn-great" type="button">Accept Trade</button>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- smart back -->
+    <!-- ===== Popup (confirm accept) ===== -->
+    <div id="popup" class="popup" aria-hidden="true">
+        <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+            <form id="acceptForm">
+                <label id="popupTitle" for="message">Confirm accept? Leave a contact/message (optional):</label>
+                <textarea id="message" name="message" placeholder="Write your message here..."></textarea>
+                <div class="popup-actions">
+                    <button type="button" class="btn-action" id="cancelBtn">cancel</button>
+                    <button type="submit" class="btn-action">confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // smart back
         function smartBack() {
             const params = new URLSearchParams(location.search);
             const from = params.get("from");
             const base = location.pathname.replace(/[^\/]+$/, "");
             const map = { profile: "profile.html", home: "home.html", posts: "search.html" };
 
-            
             if (from && map[from]) { location.href = base + map[from]; return; }
 
-            
             const sameOriginRef =
                 document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false } })();
             const isAdd = (url) => /(additem\.html|addroommate\.html)$/.test(new URL(url, location.origin).pathname);
 
-            if (sameOriginRef && document.referrer && !isAdd(document.referrer)) {
-                location.href = document.referrer; return;
-            }
+            if (sameOriginRef && document.referrer && !isAdd(document.referrer)) { location.href = document.referrer; return; }
 
-            
             const lastNonAdd = sessionStorage.getItem('lastNonAdd');
-            if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) {
-                location.href = lastNonAdd; return;
-            }
+            if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) { location.href = lastNonAdd; return; }
 
-            
             location.href = base + "profile.html";
         }
+
+        // ===== Popup logic =====
+        const popup = document.getElementById('popup');
+        const openBtn = document.getElementById('acceptBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const form = document.getElementById('acceptForm');
+        const textarea = document.getElementById('message');
+
+        function openPopup() {
+            popup.style.display = 'block';
+            popup.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => textarea.focus(), 0);
+        }
+        function closePopup() {
+            popup.style.display = 'none';
+            popup.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        openBtn.addEventListener('click', openPopup);
+        cancelBtn.addEventListener('click', closePopup);
+        popup.addEventListener('click', (e) => { if (e.target === popup) closePopup(); });
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && popup.style.display === 'block') closePopup(); });
+
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const note = textarea.value.trim();
+
+            closePopup();
+            const base = location.pathname.replace(/[^\/]+$/, "");
+            location.href = base + "requestAccept.html";
+        });
     </script>
 </body>
 

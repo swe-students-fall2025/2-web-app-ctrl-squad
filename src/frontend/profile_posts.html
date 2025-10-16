@@ -1,62 +1,224 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>My Posts - CasaConnect</title>
-        <link rel="stylesheet" href="style_revised.css"/>
-        <link rel="stylesheet" href="common_style.css"/>
-    </head>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Posts - CasaConnect</title>
+  <link rel="stylesheet" href="style_revised.css" />
+  <link rel="stylesheet" href="common_style.css" />
 
-    <body>
-        <div class="screen">
-            <div class="phone profile-posts">
-                <h1>My Posts</h1>
+  <style>
+    /* ===== Popup styles ===== */
+    .popup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,.4);
+    }
+    .popup-content {
+      background: #fff;
+      width: min(92vw, 360px);
+      margin: 10% auto;
+      padding: 18px;
+      border: 1px solid #888;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .popup-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .btn-action {
+      color:#fff;
+      background:#000;
+      border:2px solid #000;
+      border-radius:10px;
+      padding:10px 14px;
+      font-weight:800;
+      cursor:pointer;
+    }
 
-                <div class="list">
-                    <article class="post-card">
-                        <div class="post-header">
-                            <strong>Lamp</strong> 
-                            <div class="badges">
+    /* Basic card/button layout */
+    .btn.btn-danger {
+      background:#c93b3b;
+      color:#fff;
+      border:0;
+      border-radius:8px;
+      padding:8px 14px;
+      font-weight:800;
+    }
+    .btn.secondary {
+      background:#111;
+      color:#fff;
+      border-radius:8px;
+      padding:8px 14px;
+      font-weight:800;
+      text-decoration:none;
+    }
+    .inline { display:inline; }
+    .post-card {
+      padding:12px;
+      border-radius:12px;
+      background:#f6f6f6;
+      margin-bottom:14px;
+    }
+    .post-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .badges .badge {
+      background:#e6e6e6;
+      border-radius:8px;
+      padding:4px 8px;
+      margin-left:6px;
+      font-weight:700;
+    }
+    .actions { display:flex; gap:10px; align-items:center; }
+    .muted { color:#666; text-align:center; }
+  </style>
+</head>
 
-                            <span class="badge">Good</span>
-                            <span class="badge">Available</span>
-                            </div>
-                            </div>
-                        <p class="post-body">Simple desk lamp.</p>
-                        <div class="actions">
+<body>
+  <div class="screen">
+    <div class="phone profile-posts">
+      <h1>My Posts</h1>
 
-                            <a class="btn secondary" href="exchange_post.html">View</a>
-                
-                            <form class="inline" action="/item/1/delete" method="post" onsubmit="return confirm('Delete this post?')">
-                            <button class="btn btn-danger" type="submit">Delete</button>
-                </form>
+      <div class="list">
+        <!-- ====== First Post Card ====== -->
+        <article class="post-card">
+          <div class="post-header">
+            <strong>Lamp</strong>
+            <div class="badges">
+              <span class="badge">Good</span>
+              <span class="badge">Available</span>
             </div>
-            </article>
+          </div>
+          <p class="post-body">Simple desk lamp.</p>
 
-            <article class="post-card">
-                        <div class="post-header">
-                            <strong>Chair</strong> 
-                            <div class="badges">
+          <div class="actions">
+            <a class="btn secondary" href="exchange_post.html">View</a>
 
-                            <span class="badge">Like new</span>
-                            <span class="badge">Exchanged</span>
-                            </div>
-                            </div>
-                        <p class="post-body">Foldable chair.</p>
-                        <div class="actions">
+            <!-- Each post has its own delete form -->
+            <form class="inline" action="/item/1/delete" method="post">
+              <!-- Delete button triggers popup -->
+              <button class="btn btn-danger" type="button" onclick="handleDelete(this)">Delete</button>
 
-                            <a class="btn secondary" href="exchange_post.html">View</a>
-                
-                            <form class="inline" action="/item/2/delete" method="post" onsubmit="return confirm('Delete this post?')">
-                            <button class="btn btn-danger" type="submit">Delete</button>
-                </form>
+              <!-- Popup embedded inside this form -->
+              <div class="popup">
+                <div class="popup-content">
+                  <p style="font-size:inherit;">Are you sure you want to delete?</p>
+                  <div class="popup-actions">
+                    <button type="button" class="btn-action" onclick="handleCancel(this)">cancel</button>
+                    <button type="button" class="btn-action" onclick="handleSubmit(this)">confirm</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </article>
+
+        <!-- ====== Second Post Card ====== -->
+        <article class="post-card">
+          <div class="post-header">
+            <strong>Chair</strong>
+            <div class="badges">
+              <span class="badge">Like new</span>
+              <span class="badge">Exchanged</span>
             </div>
-            </article>
-        </div>
-        <p class="muted">You haven’t posted anything yet.</p>
-        <a class="btn block mt-2" href="additem.html">Create a post</a>
-        </div>
-        </div>
-    </body>
+          </div>
+          <p class="post-body">Foldable chair.</p>
+
+          <div class="actions">
+            <a class="btn secondary" href="exchange_post.html">View</a>
+
+            <form class="inline" action="/item/2/delete" method="post">
+              <button class="btn btn-danger" type="button" onclick="handleDelete(this)">Delete</button>
+
+              <div class="popup">
+                <div class="popup-content">
+                  <p style="font-size:inherit;">Are you sure you want to delete?</p>
+                  <div class="popup-actions">
+                    <button type="button" class="btn-action" onclick="handleCancel(this)">cancel</button>
+                    <button type="button" class="btn-action" onclick="handleSubmit(this)">confirm</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </article>
+      </div>
+
+      <p class="muted">You haven’t posted anything yet.</p>
+      <a class="btn secondary" href="additem.html">Create a post</a>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Show popup and lock body scroll.
+     */
+    function openPopup(popupEl){
+      popupEl.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    /**
+     * Hide popup and restore scroll.
+     */
+    function closePopup(popupEl){
+      popupEl.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    /**
+     * When clicking "Delete", open the popup that belongs to this post.
+     * Uses `closest('article')` to locate the current card context.
+     */
+    function handleDelete(btn){
+      const card = btn.closest('article');
+      const popup = card.querySelector('.popup');
+      openPopup(popup);
+
+      // Close popup if clicking outside (on the mask)
+      const onMask = (e)=>{ 
+        if(e.target === popup){
+          closePopup(popup);
+          popup.removeEventListener('click', onMask);
+        }
+      };
+      popup.addEventListener('click', onMask);
+
+      // Allow ESC key to close popup
+      const onEsc = (e)=>{
+        if(e.key === 'Escape'){
+          closePopup(popup);
+          window.removeEventListener('keydown', onEsc);
+        }
+      };
+      window.addEventListener('keydown', onEsc);
+    }
+
+    /**
+     * Cancel button: close popup only.
+     */
+    function handleCancel(btn){
+      const popup = btn.closest('.popup');
+      closePopup(popup);
+    }
+
+    /**
+     * Confirm button: close popup and submit the corresponding form.
+     */
+    function handleSubmit(btn){
+      const popup = btn.closest('.popup');
+      const form = btn.closest('form');
+      closePopup(popup);
+      form.submit();
+    }
+  </script>
+</body>
 </html>
