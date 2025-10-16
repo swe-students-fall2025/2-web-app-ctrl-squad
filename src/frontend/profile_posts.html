@@ -16,47 +16,222 @@
                 <div class="list">
                     <article class="post-card">
                         <div class="post-header">
-                            <strong>Lamp</strong> 
+                            <strong>Loading...</strong> 
                             <div class="badges">
-
-                            <span class="badge">Good</span>
-                            <span class="badge">Available</span>
+                                <span class="badge">Loading...</span>
                             </div>
-                            </div>
-                        <p class="post-body">Simple desk lamp.</p>
-                        <div class="actions">
+                        </div>
+                        <p class="post-body">Loading your posts...</p>
+                    </article>
+                </div>
+                <p id="no-posts" class="muted" style="display: none">You haven't posted anything yet.</p>
+                <a class="btn block mt-2" href="additem.html">Create a post</a>
 
-                            <a class="btn secondary" href="exchange_post.html">View</a>
-                
-                            <form class="inline" action="/item/1/delete" method="post" onsubmit="return confirm('Delete this post?')">
-                            <button class="btn btn-danger" type="submit">Delete</button>
-                </form>
+                <script>
+                    async function loadPosts() {
+                        try {
+                            const response = await fetch('http://localhost:5000/api/users/profile/posts', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'Origin': window.location.origin
+                                },
+                                credentials: 'include',
+                                mode: 'cors',
+                                cache: 'no-store'
+                            });
+
+                            if (response.status === 401 || response.status === 403) {
+                                window.location.href = 'login.html';
+                                return;
+                            }
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            const data = await response.json();
+                            if (data.success) {
+                                displayPosts(data.posts);
+                            } else {
+                                throw new Error(data.error || 'Failed to fetch posts');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            document.querySelector('.list').innerHTML = `
+                                <p class="error">Failed to load posts. Please try again.</p>
+                            `;
+                        }
+                    }
+
+                    function displayPosts(posts) {
+                        const postsContainer = document.querySelector('.list');
+                        const noPostsMessage = document.getElementById('no-posts');
+
+                        if (!posts || posts.length === 0) {
+                            postsContainer.innerHTML = '';
+                            noPostsMessage.style.display = 'block';
+                            return;
+                        }
+
+                        noPostsMessage.style.display = 'none';
+                        postsContainer.innerHTML = posts.map(post => `
+                            <article class="post-card">
+                                <div class="post-header">
+                                    <strong>${post.title}</strong> 
+                                    <div class="badges">
+                                        ${post.type === 'item' ? `<span class="badge">${post.condition || 'N/A'}</span>` : ''}
+                                        <span class="badge">${post.status || 'Available'}</span>
+                                    </div>
+                                </div>
+                                <p class="post-body">${post.description}</p>
+                                <div class="actions">
+                                    <a class="btn secondary" href="singlePost.html?id=${post._id}">View</a>
+                                    <button class="btn btn-danger" onclick="deletePost('${post._id}')">Delete</button>
+                                </div>
+                            </article>
+                        `).join('');
+                    }
+
+                    async function deletePost(postId) {
+                        if (!confirm('Are you sure you want to delete this post?')) {
+                            return;
+                        }
+
+                        try {
+                            const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                credentials: 'include',
+                                mode: 'cors'
+                            });
+
+                            if (response.status === 401 || response.status === 403) {
+                                window.location.href = 'login.html';
+                                return;
+                            }
+
+                            if (response.ok) {
+                                loadPosts();
+                            } else {
+                                const data = await response.json();
+                                alert(data.error || 'Failed to delete post');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Failed to delete post. Please try again.');
+                        }
+                    }
+
+                    // Load posts when page loads
+                    document.addEventListener('DOMContentLoaded', loadPosts);
+                </script>
             </div>
-            </article>
+        </div>
+    </body>
+</html>
 
-            <article class="post-card">
-                        <div class="post-header">
-                            <strong>Chair</strong> 
-                            <div class="badges">
-
-                            <span class="badge">Like new</span>
-                            <span class="badge">Exchanged</span>
-                            </div>
-                            </div>
-                        <p class="post-body">Foldable chair.</p>
-                        <div class="actions">
-
-                            <a class="btn secondary" href="exchange_post.html">View</a>
+                    // Load all posts when page loads
+                    document.addEventListener('DOMContentLoaded', () => loadPosts('all'));
                 
                             <form class="inline" action="/item/2/delete" method="post" onsubmit="return confirm('Delete this post?')">
                             <button class="btn btn-danger" type="submit">Delete</button>
                 </form>
             </div>
-            </article>
-        </div>
-        <p class="muted">You haven’t posted anything yet.</p>
-        <a class="btn block mt-2" href="additem.html">Create a post</a>
-        </div>
-        </div>
-    </body>
+          </div>
+          <p class="post-body">Foldable chair.</p>
+
+          <div class="actions">
+            <a class="btn secondary" href="exchange_post.html">View</a>
+
+            <form class="inline" action="/item/2/delete" method="post">
+              <button class="btn btn-danger" type="button" onclick="handleDelete(this)">Delete</button>
+
+              <div class="popup">
+                <div class="popup-content">
+                  <p style="font-size:inherit;">Are you sure you want to delete?</p>
+                  <div class="popup-actions">
+                    <button type="button" class="btn-action" onclick="handleCancel(this)">cancel</button>
+                    <button type="button" class="btn-action" onclick="handleSubmit(this)">confirm</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </article>
+      </div>
+
+      <p class="muted">You haven’t posted anything yet.</p>
+      <a class="btn secondary" href="additem.html">Create a post</a>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Show popup and lock body scroll.
+     */
+    function openPopup(popupEl){
+      popupEl.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    /**
+     * Hide popup and restore scroll.
+     */
+    function closePopup(popupEl){
+      popupEl.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    /**
+     * When clicking "Delete", open the popup that belongs to this post.
+     * Uses `closest('article')` to locate the current card context.
+     */
+    function handleDelete(btn){
+      const card = btn.closest('article');
+      const popup = card.querySelector('.popup');
+      openPopup(popup);
+
+      // Close popup if clicking outside (on the mask)
+      const onMask = (e)=>{ 
+        if(e.target === popup){
+          closePopup(popup);
+          popup.removeEventListener('click', onMask);
+        }
+      };
+      popup.addEventListener('click', onMask);
+
+      // Allow ESC key to close popup
+      const onEsc = (e)=>{
+        if(e.key === 'Escape'){
+          closePopup(popup);
+          window.removeEventListener('keydown', onEsc);
+        }
+      };
+      window.addEventListener('keydown', onEsc);
+    }
+
+    /**
+     * Cancel button: close popup only.
+     */
+    function handleCancel(btn){
+      const popup = btn.closest('.popup');
+      closePopup(popup);
+    }
+
+    /**
+     * Confirm button: close popup and submit the corresponding form.
+     */
+    function handleSubmit(btn){
+      const popup = btn.closest('.popup');
+      const form = btn.closest('form');
+      closePopup(popup);
+      form.submit();
+    }
+  </script>
+</body>
 </html>

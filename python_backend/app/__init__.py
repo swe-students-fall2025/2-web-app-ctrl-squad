@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_login import LoginManager
 from dotenv import load_dotenv
+from datetime import timedelta
 import os
 import pymongo
 from bson.objectid import ObjectId
@@ -11,17 +12,46 @@ load_dotenv()
 
 # Create Flask app
 app = Flask(__name__)
+
+# Configure app
+app.config.update(
+    SECRET_KEY=os.getenv('SECRET_KEY', 'dev-key-please-change'),
+    MONGO_URI=os.getenv('MONGODB_URI'),
+    SESSION_COOKIE_NAME='casaconnect_session',
+    SESSION_COOKIE_SAMESITE='None',  # Required for cross-origin requests
+    SESSION_COOKIE_SECURE=True,  # Required when SameSite is None
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_DOMAIN=None,  # Allow all domains in development
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+    REMEMBER_COOKIE_NAME='casaconnect_remember',
+    REMEMBER_COOKIE_SAMESITE='None',  # Required for cross-origin requests
+    REMEMBER_COOKIE_SECURE=True,  # Required when SameSite is None
+    REMEMBER_COOKIE_HTTPONLY=True,
+    REMEMBER_COOKIE_DURATION=timedelta(days=14)
+)
+
+# Configure Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.session_protection = None  # Disable session protection for development
+
+@login_manager.user_loader
+def load_user(user_id):
+    from app.models.user import User
+    print(f"Loading user: {user_id}")
+    return User.get_by_id(user_id)
+
+# Configure CORS
 CORS(app, 
      resources={r"/api/*": {
          "origins": ["http://127.0.0.1:5500", "http://localhost:5500"],
-         "supports_credentials": True,
-         "allow_headers": ["Content-Type", "Authorization"],
-         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-     }})
-
-# Configure app
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-app.config['MONGO_URI'] = os.getenv('MONGODB_URI')
+         "allow_credentials": True,
+         "expose_headers": ["Set-Cookie", "Authorization"],
+         "allow_headers": ["Content-Type", "Authorization", "Cookie", "Accept"],
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         "max_age": 3600
+     }},
+     supports_credentials=True)
 
 # Set up MongoDB connection
 try:
@@ -36,10 +66,10 @@ except Exception as e:
 # Enable debug mode
 app.debug = True
 
-# Set up Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'auth.login'
+# Custom unauthorized handler for API requests
+@login_manager.unauthorized_handler
+def unauthorized():
+    return jsonify({'error': 'Authentication required'}), 401
 
 # Import routes
 from app.routes import auth, posts, roommates, trades, users

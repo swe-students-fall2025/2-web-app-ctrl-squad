@@ -55,8 +55,7 @@
     - button to edit profile => profile_edit.html
     - button to manage user's posts => profile_posts.html
     - button to manage user's trades => manage_order.html
-    - button to settings => settings.html (not ready yet)
-    - button to view user's favorites => favorites.html (not ready yet)
+    - button to exchange request pending => seller_trade_page.html
     - list of user's posts with links to single post pages.
 
 

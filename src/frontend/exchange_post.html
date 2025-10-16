@@ -12,7 +12,6 @@
       padding-top: 28px;
     }
 
-    
     .after-topbar {
       margin-top: 0;
     }
@@ -33,7 +32,6 @@
       font-weight: 700;
     }
 
-    
     .img-skel {
       width: 100%;
       height: 320px;
@@ -59,7 +57,6 @@
       font-weight: 700;
     }
 
-    
     .block.desc {
       min-height: 200px;
       line-height: 1.5;
@@ -100,6 +97,47 @@
       font-weight: 800;
     }
 
+    /* ===== Popup styles ===== */
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .popup-content {
+      background: #fff;
+      width: min(92vw, 360px);
+      margin: 10% auto;
+      padding: 18px;
+      border: 1px solid #888;
+      border-radius: 12px;
+    }
+
+    .popup-content label {
+      font-weight: 700;
+      display: block;
+      text-align: left;
+    }
+
+    .popup-content textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .popup-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
     @media (max-width: 360px) {
       .img-skel {
         height: 320px;
@@ -115,42 +153,45 @@
         <button class="btn-back" type="button" onclick="smartBack()">Back</button>
       </div>
 
-     
       <div class="after-topbar">
         <div class="wrap">
-          <!-- username -->
           <div class="skel-line">username</div>
-
-          <!-- image -->
           <div class="img-skel">Image</div>
-
-          <!-- title & description -->
           <div class="block title">Post title</div>
           <div class="block desc">Description……</div>
-
-          
           <div class="meta-small">Last edited &lt;time&gt; &lt;IP&gt;</div>
 
-          
           <div class="actions">
             <!-- favorites -->
             <button class="btn-action" id="favBtn" type="button">
-              <span>favorites</span>
-              <span class="like-badge" id="likeCount">(0)</span>
+              <span>favorites</span><span class="like-badge" id="likeCount">(0)</span>
             </button>
 
-            <!-- exchange -->
-            <a class="btn-action" href="request_sent.html">exchange</a>
+            <!-- exchange opens popup -->
+            <button class="btn-action" id="exchangeBtn" type="button">exchange</button>
           </div>
         </div>
       </div>
     </main>
   </div>
 
-  <script>// Smart back: go to previous page, or fallback to home.html
+  <!-- Popup -->
+  <div id="popup" class="popup" aria-hidden="true">
+    <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+      <form id="exchangeForm">
+        <label id="popupTitle" for="message">Are you sure to exchange? Enter your contacts:</label>
+        <textarea id="message" name="message" placeholder="Write your contacts here..."></textarea>
+        <div class="popup-actions">
+          <button type="button" class="btn-action" id="cancelBtn">cancel</button>
+          <button type="submit" class="btn-action" id="confirmBtn">confirm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Smart back
     function smartBack() {
-      //if the previous page is buyer_trade_page or seller_trade_page, go to the history before until none was present
-      // ie: where did user click and see this page in the first place?
       if (document.referrer && document.referrer !== location.href) {
         history.back();
       } else {
@@ -159,19 +200,18 @@
       }
     }
 
-    
     function applyTopbarOffset() {
       const topbar = document.querySelector('.topbar');
       const after = document.querySelector('.after-topbar');
       if (!topbar || !after) return;
       const h = Math.ceil(topbar.getBoundingClientRect().height);
-      const extra = 8; // extra breathing space
+      const extra = 8;
       after.style.marginTop = (h + extra) + 'px';
     }
     window.addEventListener('load', applyTopbarOffset);
     window.addEventListener('resize', applyTopbarOffset);
 
-    // replace with API call when backend is ready
+    // favorites demo
     (function setupLike() {
       const btn = document.getElementById('favBtn');
       const countEl = document.getElementById('likeCount');
@@ -181,6 +221,52 @@
         countEl.textContent = `(${count})`;
       });
     })();
+
+    // ===== Popup logic =====
+    const popup = document.getElementById('popup');
+    const openBtn = document.getElementById('exchangeBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const form = document.getElementById('exchangeForm');
+
+    function openPopup() {
+      popup.style.display = 'block';
+      popup.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden'; 
+      setTimeout(() => document.getElementById('message').focus(), 0);
+    }
+
+    function closePopup() {
+      popup.style.display = 'none';
+      popup.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    // open
+    openBtn.addEventListener('click', openPopup);
+
+    // cancel
+    function handleCancel() { closePopup(); }
+    cancelBtn.addEventListener('click', handleCancel);
+
+    // confirm -> submit then, replaceable by API
+    function handleSubmit(e) {
+      if (e) e.preventDefault();
+      const msg = document.getElementById('message').value.trim();
+      
+      closePopup();
+      // link to request_sent.html
+      const base = location.pathname.replace(/[^\/]+$/, "");
+      location.href = base + "request_sent.html";
+    }
+    form.addEventListener('submit', handleSubmit);
+
+    popup.addEventListener('click', (ev) => {
+      if (ev.target === popup) closePopup();
+    });
+
+    window.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && popup.style.display === 'block') closePopup();
+    });
   </script>
 </body>
 

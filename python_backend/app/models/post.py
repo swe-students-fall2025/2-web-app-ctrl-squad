@@ -43,6 +43,24 @@ class Post:
             raise
     
     @staticmethod
+    def get_posts_by_user(user_id):
+        try:
+            posts = list(Post.collection.find({'user_id': ObjectId(user_id)}).sort('created_at', -1))
+            return json.loads(json.dumps(posts, cls=JSONEncoder))
+        except Exception as e:
+            print(f"Error getting posts by user: {e}")
+            raise
+
+    @staticmethod
+    def delete_post(post_id):
+        try:
+            result = Post.collection.delete_one({'_id': ObjectId(post_id)})
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting post: {e}")
+            raise
+
+    @staticmethod
     def get_all_posts():
         try:
             posts = list(Post.collection.find().sort('created_at', -1))
