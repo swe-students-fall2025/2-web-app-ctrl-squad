@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Trade Request</title>
     <link rel="stylesheet" href="common_style.css" />
+    <link rel="stylesheet" href="style_revised.css" />
 
     <style>
         body.no-footer .phone {
@@ -142,6 +143,7 @@
             border-radius: 8px;
             padding: 10px 18px;
             font-weight: 800;
+            font-size: 14px;
             cursor: pointer;
             flex: 1;
             text-align: center;
@@ -161,8 +163,9 @@
             background: #62905e;
             color: #fff;
         }
-        .muted{ color:var(--ink-2); text-align:center; }
 
+
+        .muted{ color:var(--ink-2); text-align:center; }
     </style>
 </head>
 
@@ -170,19 +173,16 @@
     <div class="screen">
         <main class="phone">
             <div class="topbar">
-                <button class="btn-back" type="button" onclick="smartBack()">Back</button>
+                <button class="btn-back" type="button" onclick="window.location.href='exchange_post.html'">Back</button>
             </div>
             <div class="wrap">
 
                 <div class="form-block">
                     <div class="img-skel">item<br />picture</div>
-                    <a class="skel" href="user_profile.html">receiver account name</a>
                     <div class="skel">item category</div>
-                    <div class="skel">item Description</div>
+                    <div class="skel">sender account name</div>
 
-                    <!-- 
-
-                                        <div class="field">
+                    <div class="field">
                         <div class="field-label">Time sent</div>
                         <div class="select-wrap">
                             <select id="timeSent" class="select-control" aria-label="time sent">
@@ -213,19 +213,27 @@
                                 <option value="24">24:00</option>
                             </select>
                             <div class="caret-block">
+                                <!-- category svg -->
                                 <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
                             </div>
                         </div>
                     </div>
 
-                     
-                    -->
+                <h2 class="muted">example button below</h2>
 
+                <!---- if the buyer clicked exchanged -->
 
-                     <div class="buyer-trade-actions">
-                        <div class="btn-trade btn-danger" href="requestReject.html">Reject Trade</div>
-                        <a class="btn-trade btn-great" href="requestAccept.html">Accept Trade</a>
-                    </div>
+                   <div class="buyer-trade-actions">
+                     <div class="btn-trade btn-status">Status: Pending</div>
+                     <a class="btn-trade btn-danger"  href="requestCancel.html">Cancel Trade</a>
+                   </div>
+
+                <!---- if the seller accepts the trade -->
+                <div class="buyer-trade-actions">
+                     <div class="btn-trade btn-status">Status: Accepted</div>
+                     <a class="btn-trade btn-great"  href="requestConfirm.html">Confirm Trade</a>
+                </div>
+                
                 </div>
             </div>
         </main>

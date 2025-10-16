@@ -149,6 +149,8 @@
 
   <script>// Smart back: go to previous page, or fallback to home.html
     function smartBack() {
+      //if the previous page is buyer_trade_page or seller_trade_page, go to the history before until none was present
+      // ie: where did user click and see this page in the first place?
       if (document.referrer && document.referrer !== location.href) {
         history.back();
       } else {

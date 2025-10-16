@@ -73,6 +73,11 @@ textarea:focus::-webkit-scrollbar-thumb {
     font-size: larger;
 }
 
+a{
+    text-decoration: none;
+    color: inherit;
+}
+
 .phone {
   width: 393px;
   background: var(--panel);
@@ -158,4 +163,18 @@ body:not(.no-footer) .phone {
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.btn-status {
+  pointer-events: none;
+}
+
+.btn-danger {
+  background: #c93b3b;
+  color: #fff;
+}
+
+.btn-great {
+  background: #62905e;
+  color: #fff;
 }
