@@ -11,12 +11,6 @@ load_dotenv()
 
 # Create Flask app
 app = Flask(__name__)
-
-@app.get("/")
-def home():
-    return {"message": "API is running"}, 200
-
-
 CORS(app, 
      resources={r"/api/*": {
          "origins": ["http://127.0.0.1:5500", "http://localhost:5500"],

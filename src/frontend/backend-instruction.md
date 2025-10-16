@@ -54,6 +54,8 @@
 * **Functionality:**
     - find all posts by the user from the database.
 
+### deleting user account
+
 * **Endpoint:** `/profile/delete`
 * **Functionality:**
     - Delete user account and all associated data from the database, including:
@@ -73,13 +75,50 @@
     - redirect to search results page.
     - Display a list of curated posts.
     - curate posts based on user preferences and interactions.eg.
-
-
+      - do it later
 
 ## add/update/delete posts
 
-* **Endpoints:**
-    - `/post/add`: Create a new post.
-    - `/post/<id>/edit`: Update an existing post.
-    - `/post/<id>/delete`: Delete a post.
+### singlePost.html
+* **Endpoint:** `/post/<id>`
+* **Functionality:**
+    - Display a single post.
+    - Allow users to edit or delete their own posts.
+        - If the user is the author of the post, show "Edit" and "Delete" buttons.
+        - If the user clicks "Edit", redirect to the edit post page.
+        - If the user clicks "Delete", remove the post from the database and redirect to the home page.
+
+        <br>
+
+    - Allow users to favorite/unfavorite the post.
+        - If the user has already favorited the post, show "Unfavorite" button.
+        - If the user clicks "Unfavorite", remove the post ID from their "favorites" array in the "users" collection.
+        - If the user has not favorited the post, show "Favorite" button.
+        - If the user clicks "Favorite", add the post ID to their "favorites" array in the "users" collection.
+
+        <br>
+
+
+    - Allow users to initiate a trade for item posts.
+        - If the post type is "item", show "Initiate Trade" button.
+        - If the user clicks "Initiate Trade", create a new trade document in the "trades" collection
+        - Redirect to the trade page.
+
+### addRoommate.html
+* **Endpoint:** example: `/post/roommate/new`
+* **Functionality:**
+    - Allow users to create a new roommate post.  
+    - Save the new post to the database.
+        `- Create a new document in the "posts" collection.
+        - find the user in the "users" collection and add the post ID to their "posts" array.
+    - Redirect to the newly created post page.
+
+### addItem.html
+* **Endpoint:** example: `/post/item/new`
+* **Functionality:**
+    - Allow users to create a new item post.  
+    - Save the new post to the database.
+        - Create a new document in the "posts" collection.
+        - find the user in the "users" collection and add the post ID to their "posts" array.
+    - Redirect to the newly created post page.
 
