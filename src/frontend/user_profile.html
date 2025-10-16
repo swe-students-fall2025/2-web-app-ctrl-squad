@@ -189,26 +189,6 @@
       .post-body { grid-template-columns: 1fr; }
     }
 
-
-        .btn-status {
-            pointer-events: none;
-        }
-
-        .btn-neutral {
-            background: #777;
-            color: #fff;
-        }
-
-        .btn-danger{
-            background:#c93b3b;
-            color:#fff;
-        }
-
-        .btn-great{
-            background: #62905e;
-            color: #fff;
-        }
-        .muted{ color:var(--ink-2); text-align:center; }
   </style>
 </head>
 
@@ -225,7 +205,6 @@
           <div class="info">
             <div class="row-compact">
               <div class="skel-input" aria-label="username">user name</div>
-              <a class="pill" href="profile_edit.html">edit</a>
             </div>
             <div class="row-compact">
               <div class="skel-input" aria-label="bio">bio</div>
@@ -242,45 +221,37 @@
           </div>
         </section>
 
-        <!-- Manage buttons -->
-        <div class="manage-row">
-          <a class="btn-solid" href="profile_posts.html">Manage Posts</a>
-          <a class="btn-solid" href="manage_order.html">Manage Orders</a>
-        </div>
-
         <!-- posts -->
-        <h3 class="section-title">Your Posts</h3>
+        <h3 class="section-title">Recent Posts</h3>
 
-        <article class="post">
+        <article class="post" >
           <div class="post-head">
-            <div class="skel-input" style="width:180px;">post title</div>
-            <a class="badge btn-neutral" href="seller_trade_page.html">Exchange Request Pending</a>
+            <a class="skel-input" style="width:100%;"  href="exchange_post.html">post title</a>
           </div>
-          <div class="post-body">
-            <div class="media">image / description</div>
+          <a class="post-body" href="exchange_post.html">
+            <div class="media" style="text-decoration: none;">image / description</div>
             <div class="meta">
               <div class="skel-chip">favorites</div>
               <div class="skel-chip">username</div>
               <div class="skel-chip">time posted</div>
             </div>
-          </div>
+        </a>
         </article>
 
         <div class="spacer"></div>
-      
-        <article class="post">
+
+                <article class="post" >
           <div class="post-head">
-            <div class="skel-input" style="width:180px;">post title</div>
-            <a class="badge btn-great" href="seller_trade_page.html">Exchange Request Accepted</a>
+            <a class="skel-input" style="width:100%;"  href="exchange_post.html">post title</a>
           </div>
-          <div class="post-body">
-            <div class="media">image / description</div>
+          <a class="post-body" href="exchange_post.html">
+            <div class="media" style="text-decoration: none;">image / description</div>
             <div class="meta">
               <div class="skel-chip">favorites</div>
               <div class="skel-chip">username</div>
               <div class="skel-chip">time posted</div>
             </div>
-          </div>
+        </a>
         </article>
 
       </div>
