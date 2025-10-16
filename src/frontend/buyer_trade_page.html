@@ -38,6 +38,35 @@
             font-size: 14px;
         }
 
+        .short-skel{
+            white-space: nowrap;
+            width: fit-content;
+            background: #e6e6e6;
+            border-radius: 8px;
+            padding: 12px;
+            color: #606060;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .skel-row{
+            display: flex;
+            flex-direction: row;
+            flex-direction: wrap;
+            gap: 4px;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .categories-icon{
+            width:18px;
+            height:18px;
+            object-fit: contain;
+            display: block;
+        }
+
         .img-skel {
             width: 100%;
             aspect-ratio: 1/1;
@@ -57,6 +86,21 @@
             flex-direction: column;
             gap: 16px;
             align-items: center;
+        }
+
+        .skel-card{
+            width: 100%;
+            background: #e6e6e6;
+            border-radius: 8px;
+            padding: 12px;
+            color: #606060;
+            text-align: center;
+            font-size: 14px;
+            background-color: transparent;
+            display: flex;
+            flex-direction: column;
+            gap:12px;
+            border: 2px solid var(--border); 
         }
 
         .field {
@@ -178,46 +222,17 @@
             <div class="wrap">
 
                 <div class="form-block">
-                    <div class="img-skel">item<br />picture</div>
-                    <div class="skel">item category</div>
-                    <div class="skel">sender account name</div>
+                   <a class="skel-card" href="exchange_post.html">
+                     <div class="img-skel">item<br />picture</div>
+                     <div class="skel-row">
+                         <div class="short-skel">
+                            <img class="categories-icon" src="../assets/categorie-electronics.svg" alt="">
+                         </div>
+                         <div class="skel">item name</div>
+                     </div>
+                   </a>
+                   <a class="skel" href="user_profile.html">From sender account name</a>
 
-                    <div class="field">
-                        <div class="field-label">Time sent</div>
-                        <div class="select-wrap">
-                            <select id="timeSent" class="select-control" aria-label="time sent">
-                                <option value="" selected disabled>time sent</option>
-                                <option value="1">01:00</option>
-                                <option value="2">02:00</option>
-                                <option value="3">03:00</option>
-                                <option value="4">04:00</option>
-                                <option value="5">05:00</option>
-                                <option value="6">06:00</option>
-                                <option value="7">07:00</option>
-                                <option value="8">08:00</option>
-                                <option value="9">09:00</option>
-                                <option value="10">10:00</option>
-                                <option value="11">11:00</option>
-                                <option value="12">12:00</option>
-                                <option value="13">13:00</option>
-                                <option value="14">14:00</option>
-                                <option value="15">15:00</option>
-                                <option value="16">16:00</option>
-                                <option value="17">17:00</option>
-                                <option value="18">18:00</option>
-                                <option value="19">19:00</option>
-                                <option value="20">20:00</option>
-                                <option value="21">21:00</option>
-                                <option value="22">22:00</option>
-                                <option value="23">23:00</option>
-                                <option value="24">24:00</option>
-                            </select>
-                            <div class="caret-block">
-                                <!-- category svg -->
-                                <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
-                            </div>
-                        </div>
-                    </div>
 
                 <h2 class="muted">example button below</h2>
 
