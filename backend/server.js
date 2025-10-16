@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors"; 
 import bcrypt from "bcrypt";
+import session from "express-session";
+import cookieParser from "cookie-parser";
 import User from "./models/User.js";
 import postRoutes from "./routes/postRoutes.js";
 import roommateRoutes from "./routes/roommateRoutes.js";
@@ -12,7 +14,22 @@ import { errorHandler } from "./middleware/errorHandler.js";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'http://127.0.0.1:5500', // Using IP address instead of localhost for consistency
+  credentials: true
+}));
+app.use(cookieParser());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false, // Set to true in production with HTTPS
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax'
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -67,6 +84,55 @@ app.post("/register", async (req, res) => {
     console.error("Registration error:", error);
     return res.status(500).json({ error: "Internal server error." });
   }
+});
+
+// Login route
+app.post("/login", async (req, res) => {
+  try {
+    const { login, password } = req.body;
+    if (!login || !password) {
+      return res.status(400).json({ error: "Email/username and password are required." });
+    }
+
+    const normLogin = String(login).trim().toLowerCase();
+    const user = await User.findOne({
+      $or: [
+        { email: normLogin },
+        { account_name: normLogin.toLowerCase() }
+      ]
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+
+    // Set up session
+    req.session.userId = user._id;
+    
+    res.json({
+      id: user._id,
+      email: user.email,
+      account_name: user.account_name
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+// Logout route
+app.post("/logout", (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).json({ error: "Could not log out." });
+    }
+    res.json({ message: "Logged out successfully." });
+  });
 });
 
 // Error handling middleware
