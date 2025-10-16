@@ -49,5 +49,19 @@ app.register_blueprint(roommates.bp, url_prefix='/api')  # Roommates under /api
 app.register_blueprint(trades.bp, url_prefix='/api')  # Trades under /api
 app.register_blueprint(users.bp)  # Users routes (already has url_prefix in blueprint)
 
+from flask import Blueprint, jsonify
+
+base = Blueprint("base", __name__)
+
+@base.get("/")
+def root():
+    return "Backend running", 200
+
+@base.get("/health")
+def health():
+    return jsonify(ok=True), 200
+
+app.register_blueprint(base)
+
 if __name__ == '__main__':
     app.run(debug=True, port=os.getenv('PORT', 5000))
