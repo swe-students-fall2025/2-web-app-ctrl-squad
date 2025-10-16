@@ -37,6 +37,24 @@
             font-size: 14px;
         }
 
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 5px;
+            object-fit: cover;
+        }
+
+        .user_profile {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+        }
+
         .img-skel {
             width: 100%;
             aspect-ratio: 1/1;
@@ -132,6 +150,7 @@
             flex-direction: row;
             gap: 12px;
             align-items: center;
+            justify-content: center;
             margin-top: 24px;
         }
 
@@ -176,7 +195,10 @@
 
                 <div class="form-block">
                     <div class="img-skel">item<br />picture</div>
-                    <a class="skel" href="user_profile.html">receiver account name</a>
+                    <a class="skel user_profile" href="user_profile.html">
+                        <img class="user-avatar" src="../assets/Image.svg" alt="">
+                        <p>Buyer Account</p>
+                    </a>
                     <div class="skel">item category</div>
                     <div class="skel">item Description</div>
 
@@ -221,10 +243,8 @@
                      
                     -->
 
-
                      <div class="buyer-trade-actions">
-                        <a class="btn-trade btn-danger" href="requestReject.html">Reject Trade</a>
-                        <a class="btn-trade btn-great" href="requestAccept.html">Accept Trade</a>
+                        <a class="btn-primary" href="requestAccept.html">Trade Completed</a>
                     </div>
                 </div>
             </div>
