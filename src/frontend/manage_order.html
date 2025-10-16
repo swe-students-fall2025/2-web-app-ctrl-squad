@@ -21,6 +21,7 @@
 
         .post {
             width: 100%;
+            min-width: 363px;
             border: 1px solid var(--drop, #d9d9d9);
             border-radius: 14px;
             padding: 12px;
@@ -85,6 +86,15 @@
             gap: 12px;
         }
 
+        .main-content {
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+
+        .block {
+            margin-top: 20px;
+        }
+
         .skel-chip {
             background: #efefef;
             border: 1px solid var(--drop, #d9d9d9);
@@ -102,7 +112,7 @@
 
         .page-title {
             font-weight: 700;
-            font-size: 16px;
+            font-size: 20px;
             color: #9a9a9a;
             margin: 0 0 8px 2px;
         }
@@ -123,58 +133,92 @@
                 <button class="btn-back" type="button" onclick="smartBack()">Back</button>
             </div>
 
-            <h2 class="page-title">manage trades</h2>
+            <div class="main-content">
+                <div class="block">
+                    <h2 class="page-title">Ongoing</h2>
+                    <div class="wrap">
+                        <!-- sample post lists -->
+                        <article class="post">
+                            <div class="post-head">
+                                <div class="skel-input" style="width:180px;">post title</div>
+                                <a class="badge" href="buyer_trade_page.html">View Status</a>
+                            </div>
+                            <div class="post-body">
+                                <div class="media">image /<br> Description</div>
+                                <div class="meta">
+                                    <div class="skel-chip">favorites</div>
+                                    <div class="skel-chip">username</div>
+                                    <div class="skel-chip">time posted</div>
+                                </div>
+                            </div>
+                        </article>
 
-            <div class="wrap">
-                <!-- sample post lists -->
-                <article class="post">
-                    <div class="post-head">
-                        <div class="skel-input" style="width:180px;">post title</div>
-                        <a class="badge" href="buyer_trade.html">Acknowledge Receipt</a>
+                        <article class="post">
+                            <div class="post-head">
+                                <div class="skel-input" style="width:180px;">post title</div>
+                                <a class="badge" href="buyer_trade.html">View Status</a>
+                            </div>
+                            <div class="post-body">
+                                <div class="media">image /<br> Description</div>
+                                <div class="meta">
+                                    <div class="skel-chip">favorites</div>
+                                    <div class="skel-chip">username</div>
+                                    <div class="skel-chip">time posted</div>
+                                </div>
+                            </div>
+                        </article>
                     </div>
-                    <div class="post-body">
-                        <div class="media">image /<br> Description</div>
-                        <div class="meta">
-                            <div class="skel-chip">favorites</div>
-                            <div class="skel-chip">username</div>
-                            <div class="skel-chip">time posted</div>
-                        </div>
-                    </div>
-                </article>
+                </div>
+                <div class="block">
+                    <h2 class="page-title">Completed</h2>
+                    <div class="wrap">
+                        <!-- sample post lists -->
+                        <article class="post">
+                            <div class="post-head">
+                                <div class="skel-input" style="width:180px;">post title</div>
+                                <div class="badge cancelled" href="buyer_trade.html">Cancelled</div>
+                            </div>
+                            <div class="post-body">
+                                <div class="media">image /<br> Description</div>
+                                <div class="meta">
+                                    <div class="skel-chip">favorites</div>
+                                    <div class="skel-chip">username</div>
+                                    <div class="skel-chip">time posted</div>
+                                </div>
+                            </div>
+                        </article>
 
-                <div class="spacer"></div>
+                        <article class="post">
+                            <div class="post-head">
+                                <div class="skel-input" style="width:180px;">post title</div>
+                                <a class="badge" href="buyer_trade.html">Confirm Status</a>
+                            </div>
+                            <div class="post-body">
+                                <div class="media">image /<br> Description</div>
+                                <div class="meta">
+                                    <div class="skel-chip">favorites</div>
+                                    <div class="skel-chip">username</div>
+                                    <div class="skel-chip">time posted</div>
+                                </div>
+                            </div>
+                        </article>
 
-                <article class="post">
-                    <div class="post-head">
-                        <div class="skel-input" style="width:180px;">post title</div>
-                        <a class="badge" href="buyer_trade.html">Acknowledge Receipt</a>
+                        <article class="post">
+                            <div class="post-head">
+                                <div class="skel-input" style="width:180px;">post title</div>
+                                <a class="badge" href="buyer_trade.html">View Receipt</a>
+                            </div>
+                            <div class="post-body">
+                                <div class="media">image /<br> Description</div>
+                                <div class="meta">
+                                    <div class="skel-chip">favorites</div>
+                                    <div class="skel-chip">username</div>
+                                    <div class="skel-chip">time posted</div>
+                                </div>
+                            </div>
+                        </article>
                     </div>
-                    <div class="post-body">
-                        <div class="media">image /<br> Description</div>
-                        <div class="meta">
-                            <div class="skel-chip">favorites</div>
-                            <div class="skel-chip">username</div>
-                            <div class="skel-chip">time posted</div>
-                        </div>
-                    </div>
-                </article>
-
-                <div class="spacer"></div>
-
-                <article class="post">
-                    <div class="post-head">
-                        <div class="skel-input" style="width:180px;">post title</div>
-                        <a class="badge" href="buyer_trade.html">Acknowledge Receipt</a>
-                    </div>
-                    <div class="post-body">
-                        <div class="media">image /<br> Description</div>
-                        <div class="meta">
-                            <div class="skel-chip">favorites</div>
-                            <div class="skel-chip">username</div>
-                            <div class="skel-chip">time posted</div>
-                        </div>
-                    </div>
-                </article>
+                </div>
             </div>
         </main>
     </div>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🏡 CasaConnect — Add item post</title>
+  <link rel="stylesheet" href="common_style.css">
+  <style>
+
+
+    .tabs {
+      display: flex;
+      margin: 8px 0 14px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 12px;
+      font-weight: 700;
+      border-radius: 8px 8px 0 0;
+      text-decoration: none;
+      display: block;
+    }
+
+    .tab.active {
+      background: #111;
+      color: #fff;
+    }
+
+    .tab.muted {
+      background: #dcdcdc;
+      color: #6b6b6b;
+    }
+
+    .form {
+      padding: 10px 4px 2px;
+    }
+
+    .label {
+      font-weight: 700;
+      margin: 14px 0 6px;
+    }
+
+    .input,
+    .select-wrap,
+    .textarea {
+      width: 100%;
+      border-radius: 6px;
+      background: #e6e6e6;
+      border: 0;
+      outline: 0;
+    }
+
+    .input {
+      height: 38px;
+      padding: 8px 10px;
+    }
+
+    .textarea {
+      height: 120px;
+      padding: 10px;
+      resize: vertical;
+    }
+
+    .select-wrap {
+      position: relative;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 2px;
+      background: #e6e6e6;
+      border-radius: 6px;
+    }
+
+    select {
+      appearance: none;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: transparent;
+      padding: 0 44px 0 10px;
+      font: inherit;
+      color: #222;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .select-caret {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 40px;
+      background: #111;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      border-radius: 0 6px 6px 0;
+      pointer-events: none;
+      font-size: 40px;
+      align-content: center
+    }
+
+    .dropzone {
+      border-radius: 10px;
+      background: var(--drop);
+      height: 260px;
+      display: grid;
+      place-items: center;
+      border: 3px solid #6aa2ff;
+      color: #000;
+      font-weight: 800;
+      margin-bottom: 16px;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .dropzone.preview {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dropzone .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(17, 17, 17, .85);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      padding: 18px 0 6px;
+    }
+
+    .btn-post {
+      background: #111;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 36px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body id="add-item-body" class="no-footer">
+  <div class="screen">
+    <div class="phone">
+      <div class="topbar">
+        <!-- back button -- link smarBack back to home-->
+        <button class="btn-back" type="button" onclick="smartBack()">Back</button>
+      </div>
+      
+      <!-- image input -->
+      <form id="postForm" class="form" action="http://localhost:5000/api/posts" method="post">
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
+          <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
+          Insert Image
+        </div>
+        <input id="imageInput" type="file" name="images" accept="image/*" hidden multiple />
+        <!-- post parameters -->
+        <div class="label">Title</div>
+        <input class="input" type="text" name="title" placeholder="Add title..." required />
+
+
+        <div class="label">Type</div>
+        <div class="select-wrap">
+          <select name="type" aria-label="Type" required>
+            <option value="" disabled selected>Choose type</option>
+            <option value="free">Free</option>
+            <option value="exchange">Exchange</option>
+          </select>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+        </div>  
+
+        <div class="label">Location</div>
+        <div class="select-wrap">
+          <select name="location" aria-label="Location" required>
+            <option value="" disabled selected>Choose location</option>
+            <option>On campus Brooklyn</option>
+            <option>On campus Manhattan</option>
+            <option>Off campus</option>
+          </select>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+        </div>  
+
+
+        <div class="label">Choose category</div>
+        <div class="select-wrap">
+          <select name="category" aria-label="Choose category" required>
+            <option value="" disabled selected>Choose category</option>
+            <option>Textbooks</option>
+            <option>Furniture</option>
+            <option>Electronics</option>
+            <option>Clothing</option>
+            <option>Other</option>
+          </select>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+        </div>
+
+        <div class="label">Add description...</div>
+        <textarea class="textarea" name="description" placeholder="Add description..." required></textarea>
+
+        <div class="actions">
+          <button class="btn btn-post" type="submit"><span>Post</span></button>
+        </div>
+      </form>
+
+      <div class="footer">© CTRL Squad, 2025</div>
+    </div>
+  </div>
+
+  <!-- Back to former page or home.html -->
+<script>
+function smartBack() {
+  const params = new URLSearchParams(location.search);
+  const from = params.get("from");
+  const base = location.pathname.replace(/[^\/]+$/, "");
+  const map  = { profile: "profile.html", home: "home.html", posts: "search.html" };
+
+  // 1) If "from" parameter is present and valid, go there
+  if (from && map[from]) { location.href = base + map[from]; return; }
+
+  // 2) If referrer is same-origin and NOT an add page, go there
+  const sameOriginRef =
+    document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false }})();
+  const isAdd = (url) => /(additem\.html|addroommate\.html)$/.test(new URL(url, location.origin).pathname);
+
+  if (sameOriginRef && document.referrer && !isAdd(document.referrer)) {
+    location.href = document.referrer; return;
+  }
+
+  // 3) Otherwise jump to the last non-add page we saved
+  const lastNonAdd = sessionStorage.getItem('lastNonAdd');
+  if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) {
+    location.href = lastNonAdd; return;
+  }
+
+  // 4) Final fallback
+  location.href = base + "home.html";
+}
+</script>
+
+
+  <!-- insert image -->
+  <script>
+    (function () {
+      const dropzone = document.getElementById('dropzone');
+      const fileInput = document.getElementById('imageInput');
+      const form = document.getElementById('postForm');
+
+      const MAX_MB = 5;
+      const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+
+      const openPicker = () => fileInput.click();
+      dropzone.addEventListener('click', openPicker);
+      dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        if (!ACCEPTED.includes(file.type)) { alert('please upload png/jpg/jpeg/webp/gif'); fileInput.value = ''; return; }
+        if (file.size / (1024 * 1024) > MAX_MB) { alert('maximum 5KB'); fileInput.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+          dropzone.classList.add('preview');
+          dropzone.innerHTML = `
+            <img src="${reader.result}" alt="preview" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>
+            <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
+          `;
+          dropzone.querySelector('.remove-btn').addEventListener('click', () => {
+            dropzone.classList.remove('preview');
+            dropzone.innerHTML = 'Insert Image';
+            fileInput.value = '';
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+        e.preventDefault(); e.stopPropagation(); dropzone.style.outline = '3px solid #6aa2ff';
+      }));
+      ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+        e.preventDefault(); e.stopPropagation(); dropzone.style.outline = 'none';
+      }));
+      dropzone.addEventListener('drop', e => {
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (!file) return;
+        const dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event('change'));
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Get form data
+        const formData = new FormData(form);
+        const images = fileInput.files;
+        const imageUrls = [];
+
+        // Convert images to base64 URLs
+        if (images.length > 0) {
+          for (let i = 0; i < images.length; i++) {
+            const reader = new FileReader();
+            await new Promise((resolve) => {
+              reader.onload = () => {
+                imageUrls.push(reader.result);
+                resolve();
+              };
+              reader.readAsDataURL(images[i]);
+            });
+          }
+        }
+
+        // Prepare the post data
+        const postData = {
+          title: formData.get('title'),
+          description: formData.get('description'),
+          categories: [formData.get('category')],
+          images: imageUrls,
+          exchange_type: "trade", // You can add a field for this if needed
+          condition: "used", // You can add a field for this if needed
+          location: "On Campus" // You can add a field for this if needed
+        };
+
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(postData)
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to create post');
+          }
+
+          const data = await response.json();
+          if (data.success) {
+            alert('Item posted successfully!');
+            location.href = 'postconfirm.html';
+          } else {
+            throw new Error(data.error || 'Failed to create post');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          alert('Failed to create post. Please try again later.');
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>
