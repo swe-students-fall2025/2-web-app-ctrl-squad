@@ -24,6 +24,22 @@
       gap: 20px;
     }
 
+    .logout-button {
+      background-color: #ff4444;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    .logout-button:hover {
+      background-color: #ff0000;
+    }
+
     /* Profile info card */
     .profile-card {
       display: grid;
@@ -238,10 +254,38 @@
               <div class="skel-input" aria-label="location">Loading...</div>
               <div></div>
             </div>
+            <button class="logout-button" onclick="handleLogout()">Logout</button>
           </div>
         </section>
         
         <script>
+          // Handle logout
+          async function handleLogout() {
+            try {
+              const response = await fetch('http://localhost:5000/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+              });
+
+              if (response.ok) {
+                // Clear local storage
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                // Redirect to login page
+                window.location.href = 'login.html';
+              } else {
+                console.error('Logout failed:', response.status);
+                alert('Logout failed. Please try again.');
+              }
+            } catch (error) {
+              console.error('Logout error:', error);
+              alert('Logout failed. Please try again.');
+            }
+          }
+
           // Check for authentication
           function checkAuth() {
             const token = localStorage.getItem('token');
@@ -262,6 +306,7 @@
             }
 
             try {
+              // Keep the Authorization header with Bearer token
               const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
                 headers: {
                   'Authorization': `Bearer ${token}`,
@@ -294,6 +339,9 @@
 
               const info = document.querySelector('#profileInfo .info');
               
+              // Save the logout button if it exists
+              const existingLogoutButton = info.querySelector('.logout-button');
+              
               info.innerHTML = `
                 <div class="row-compact">
                   <div class="skel-input" aria-label="username">${profile.username || 'No username set'}</div>
@@ -312,6 +360,17 @@
                   <div></div>
                 </div>
               `;
+              
+              // Re-add the logout button
+              if (existingLogoutButton) {
+                info.appendChild(existingLogoutButton);
+              } else {
+                const logoutButton = document.createElement('button');
+                logoutButton.className = 'logout-button';
+                logoutButton.onclick = handleLogout;
+                logoutButton.textContent = 'Logout';
+                info.appendChild(logoutButton);
+              }
 
             } catch (error) {
               console.error('Error loading profile:', error);
