@@ -237,114 +237,127 @@ function smartBack() {
 </script>
 
   <!-- submit parameters -->
-  <script>
-    (function () {
-      const dropzone = document.getElementById('dropzone');
-      const fileInput = document.getElementById('imageInput');
-      const form = document.getElementById('postForm');
+<script>
+(function () {
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('imageInput');
+  const form = document.getElementById('postForm');
 
-      const MAX_MB = 5;
-      const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+  const MAX_MB = 5;
+  const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 
-      const openPicker = () => fileInput.click();
-      dropzone.addEventListener('click', openPicker);
-      dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
+  // --- Image preview setup ---
+  const openPicker = () => fileInput.click();
+  dropzone.addEventListener('click', openPicker);
+  dropzone.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); }
+  });
 
-      fileInput.addEventListener('change', () => {
-        const file = fileInput.files && fileInput.files[0];
-        if (!file) return;
-        if (!ACCEPTED.includes(file.type)) { alert('please upload png/jpg/jpeg/webp/gif'); fileInput.value = ''; return; }
-        if (file.size / (1024 * 1024) > MAX_MB) { alert('maximum 5KB'); fileInput.value = ''; return; }
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    if (!ACCEPTED.includes(file.type)) { alert('Please upload png/jpg/jpeg/webp/gif'); fileInput.value = ''; return; }
+    if (file.size / (1024 * 1024) > MAX_MB) { alert('Maximum file size is 5MB'); fileInput.value = ''; return; }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      dropzone.classList.add('preview');
+      dropzone.innerHTML = `
+        <img src="${reader.result}" alt="preview"
+             style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
+        <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>`;
+      dropzone.querySelector('.remove-btn').addEventListener('click', () => {
+        dropzone.classList.remove('preview');
+        dropzone.innerHTML = 'Insert Image';
+        fileInput.value = '';
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // --- Drag and drop styling ---
+  ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation(); dropzone.style.outline = '3px solid #6aa2ff';
+  }));
+  ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+    e.preventDefault(); e.stopPropagation(); dropzone.style.outline = 'none';
+  }));
+  dropzone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    fileInput.files = dt.files;
+    fileInput.dispatchEvent(new Event('change'));
+  });
+
+  // --- Submit form ---
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const title = (formData.get('title') || '').trim();
+    const description = (formData.get('description') || '').trim();
+    const location = (formData.get('place_to_live') || '').trim();
+    const year = formData.get('year');
+
+    if (!title || !description) {
+      alert('Title and Description are required.');
+      return;
+    }
+
+    // Convert images to Base64 URLs
+    const images = [];
+    if (fileInput.files.length > 0) {
+      for (const file of fileInput.files) {
         const reader = new FileReader();
-        reader.onload = () => {
-          dropzone.classList.add('preview');
-          dropzone.innerHTML = `
-            <img src="${reader.result}" alt="preview" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
-            <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
-          `;
-          dropzone.querySelector('.remove-btn').addEventListener('click', () => {
-            dropzone.classList.remove('preview');
-            dropzone.innerHTML = 'Insert Image';
-            fileInput.value = '';
-          });
-        };
-        reader.readAsDataURL(file);
+        await new Promise(resolve => {
+          reader.onload = () => { images.push(reader.result); resolve(); };
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+
+    // Construct preferences
+    const preferences = [];
+    if (year) preferences.push(`years:${year}`);
+    if (location) {
+      const onCampus = location.toLowerCase().includes('campus');
+      preferences.push(onCampus ? 'on_campus' : 'off_campus');
+    }
+
+    // --- Payload matches your backend nomenclature ---
+    const roommateData = {
+      title,
+      description,
+      preferences,
+      location,
+      images
+    };
+
+    try {
+      const res = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // send cookies for @login_required
+        body: JSON.stringify(roommateData)
       });
 
-      ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
-        e.preventDefault(); e.stopPropagation(); dropzone.style.outline = '3px solid #6aa2ff';
-      }));
-      ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
-        e.preventDefault(); e.stopPropagation(); dropzone.style.outline = 'none';
-      }));
-      dropzone.addEventListener('drop', e => {
-        const file = e.dataTransfer.files && e.dataTransfer.files[0];
-        if (!file) return;
-        const dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files;
-        fileInput.dispatchEvent(new Event('change'));
-      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
 
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        // Get form data
-        const formData = new FormData(form);
-        const images = fileInput.files;
-        const imageUrls = [];
+      alert('Roommate post created!');
+      console.log('Created roommate post:', data);
 
-        // Convert images to base64 URLs
-        if (images.length > 0) {
-          for (let i = 0; i < images.length; i++) {
-            const reader = new FileReader();
-            await new Promise((resolve) => {
-              reader.onload = () => {
-                imageUrls.push(reader.result);
-                resolve();
-              };
-              reader.readAsDataURL(images[i]);
-            });
-          }
-        }
-
-        // Prepare the roommate post data
-        const roommateData = {
-          title: formData.get('title'),
-          description: formData.get('description'),
-          images: imageUrls,
-          year: parseFloat(formData.get('year')),
-          placesToLive: formData.get('place_to_live'),
-          onCampus: formData.get('place_to_live').toLowerCase().includes('campus'),
-          region: formData.get('place_to_live'), // Using place_to_live as region for now
-        };
-
-        try {
-          const response = await fetch(form.action, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(roommateData)
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to create roommate post');
-          }
-
-          const data = await response.json();
-          if (data.success) {
-            alert('Roommate post created successfully!');
-            location.href = 'postconfirm.html';
-          } else {
-            throw new Error(data.error || 'Failed to create roommate post');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          alert(error.message || 'Failed to create roommate post. Please try again later.');
-        }
-      });
-    })();
-  </script>
+      // Optional redirect
+      // location.href = 'post_confirm.html';
+    } catch (error) {
+      console.error('Error:', error);
+      alert(error.message || 'Failed to create roommate post. Please try again later.');
+    }
+  });
+})();
+</script>
 </body>
 
 </html>
