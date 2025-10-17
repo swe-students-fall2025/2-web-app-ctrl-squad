@@ -331,40 +331,67 @@ function smartBack() {
           }
         }
 
+        // Get values from form
+        const title = formData.get('title');
+        const description = formData.get('description');
+        const category = formData.get('category');
+        const condition = formData.get('condition');
+        const price = formData.get('price') ? parseFloat(formData.get('price')) : null;
+
         // Prepare the post data
         const postData = {
-          title: formData.get('title'),
-          description: formData.get('description'),
-          categories: [formData.get('category')],
+          title: title,
+          description: description,
+          type: 'item',
+          category: category,
+          condition: condition,
+          price: price,
           images: imageUrls,
-          exchange_type: "trade", // You can add a field for this if needed
-          condition: "used", // You can add a field for this if needed
-          location: "On Campus" // You can add a field for this if needed
+          status: 'Available'
         };
 
         try {
-          const response = await fetch(form.action, {
+          console.log('Sending post data:', postData); // Debug log
+
+          const response = await fetch('http://localhost:5000/api/posts', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Origin': window.location.origin
             },
+            credentials: 'include',
+            mode: 'cors',
             body: JSON.stringify(postData)
           });
+          
+          console.log('Response status:', response.status); // Debug log
 
-          if (!response.ok) {
-            throw new Error('Failed to create post');
+          if (response.status === 401) {
+            window.location.href = 'login.html';
+            return;
           }
 
           const data = await response.json();
+          console.log('Response data:', data); // Debug output
+
+          // Check if we have a 201 status but no success flag (backward compatibility)
+          if (response.status === 201) {
+            alert('Item posted successfully!');
+            window.location.href = 'profile_posts.html';
+            return;
+          }
+
           if (data.success) {
             alert('Item posted successfully!');
-            location.href = 'postconfirm.html';
+            window.location.href = 'profile_posts.html';
           } else {
+            console.error('Server response:', data); // Debug output
             throw new Error(data.error || 'Failed to create post');
           }
         } catch (error) {
-          console.error('Error:', error);
-          alert('Failed to create post. Please try again later.');
+          console.error('Error details:', error); // Debug output
+          alert(error.message || 'Failed to create post. Please try again later.');
         }
       });
     })();

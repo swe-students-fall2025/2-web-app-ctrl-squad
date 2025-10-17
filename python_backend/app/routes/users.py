@@ -3,6 +3,7 @@ from flask_login import login_required, current_user, login_user
 from app.models.user import User
 from app import db
 from bson.objectid import ObjectId
+import re
 
 bp = Blueprint('users', __name__, url_prefix='/api/users')
 
@@ -29,43 +30,76 @@ def get_profile():
             'id': str(current_user.id),
             'email': current_user.email,
             'username': current_user.username,
-            'account_name': current_user.account_name,
             'nyu_id': current_user.nyu_id,
-            'bio': current_user.bio
+            'bio': current_user.user_data.get('bio', '')
         }
     })
 
 @bp.route('/profile', methods=['PUT'])
 @login_required
 def update_profile():
-    data = request.get_json()
-    
-    # Validate email format
-    if 'email' in data and not data['email'].endswith('@nyu.edu'):
-        return jsonify({'error': 'Email must be an NYU email address'}), 400
-    
-    # Validate NYU ID format
-    if 'nyu_id' in data and not (data['nyu_id'].startswith('N') and len(data['nyu_id']) == 8):
-        return jsonify({'error': 'NYU ID must be in format N1234567'}), 400
-    
     try:
-        # Update user profile
-        update_data = {}
-        allowed_fields = ['email', 'username', 'nyu_id', 'bio']
-        for field in allowed_fields:
-            if field in data:
-                update_data[field] = data[field]
+        print("Headers:", dict(request.headers))
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+            
+        print("Raw request data:", request.get_data())
+        print("Parsed update data:", data)  # Debug print
         
-        if update_data:
-            db.users.update_one(
-                {'_id': ObjectId(current_user.id)},
-                {'$set': update_data}
-            )
-        return jsonify({'message': 'Profile updated successfully'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        # Ensure all required fields are present
+        required_fields = ['username', 'email', 'nyu_id']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
+            return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
 
-@bp.route('/profile/posts', methods=['GET', 'OPTIONS'])
+        # Clean and validate email
+        email = str(data.get('email', '')).strip().lower()
+        if not email.endswith('@nyu.edu'):
+            return jsonify({'error': 'Email must be an NYU email address'}), 400
+        
+        # Just ensure NYU ID is not empty
+        nyu_id = str(data.get('nyu_id', '')).strip()
+        if not nyu_id:
+            return jsonify({
+                'success': False,
+                'error': 'NYU ID cannot be empty'
+            }), 400
+
+        # Clean other fields
+        username = str(data.get('username', '')).strip()
+        bio = str(data.get('bio', '')).strip()
+
+        # Update user profile
+        update_data = {
+            'email': email,
+            'username': username,
+            'nyu_id': nyu_id,
+            'bio': bio
+        }
+        
+        result = db.users.update_one(
+            {'_id': ObjectId(current_user.id)},
+            {'$set': update_data}
+        )
+        
+        if result.modified_count > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Profile updated successfully'
+            }), 200
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No changes were made to the profile'
+            }), 400
+            
+    except Exception as e:
+        print(f"Error updating profile: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Server error while updating profile'
+        }), 500@bp.route('/profile/posts', methods=['GET', 'OPTIONS'])
 def get_user_posts():
     """Get all posts by the current user"""
     if request.method == 'OPTIONS':

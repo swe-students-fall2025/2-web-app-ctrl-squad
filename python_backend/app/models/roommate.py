@@ -1,56 +1,88 @@
 from datetime import datetime
+import json
 from bson.objectid import ObjectId
 from app import db
 
+# --- JSON helpers so ObjectId/datetime serialize cleanly ---
+class _JSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        if isinstance(o, datetime):
+            return o.isoformat()
+        return super().default(o)
+
+def _dump(o):
+    return json.loads(json.dumps(o, cls=_JSONEncoder))
+
 class Roommate:
     collection = db.roommates
-    
+
     @staticmethod
     def create_roommate_post(user_id, title, description, preferences=None, location=None):
         roommate_data = {
-            'user_id': ObjectId(user_id),
-            'title': title,
-            'description': description,
-            'preferences': preferences or {},
-            'location': location,
-            'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow()
+            "user_id": ObjectId(user_id),
+            "title": title,
+            "description": description,
+            "preferences": preferences or [],   # list is easier to render on FE
+            "location": location,
+            'images': images or [],
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
         }
-        result = db.roommates.insert_one(roommate_data)
-        roommate_data['_id'] = result.inserted_id
-        return roommate_data
-    
+        result = Roommate.collection.insert_one(roommate_data)
+        roommate_data["_id"] = result.inserted_id
+        return _dump(roommate_data)
+
     @staticmethod
     def get_by_id(roommate_id):
-        return db.roommates.find_one({'_id': ObjectId(roommate_id)})
-    
+        doc = Roommate.collection.find_one({"_id": ObjectId(roommate_id)})
+        return _dump(doc) if doc else None
+
     @staticmethod
     def get_all_roommate_posts():
-        return list(db.roommates.find().sort('created_at', -1))
-    
+        """Backward-compatible: return ALL posts (no pagination)."""
+        docs = list(Roommate.collection.find().sort("created_at", -1))
+        return _dump(docs)
+
+    # NEW: paginated list
+    @staticmethod
+    def get_all_roommate_posts_paginated(page: int = 1, limit: int = 20):
+        query = {}
+        total = Roommate.collection.count_documents(query)
+        page = max(1, int(page))
+        limit = max(1, min(int(limit), 100))
+        skip = (page - 1) * limit
+        cursor = (
+            Roommate.collection.find(query)
+            .sort("created_at", -1)
+            .skip(skip)
+            .limit(limit)
+        )
+        docs = list(cursor)
+        return _dump(docs), total
+
     @staticmethod
     def get_user_roommate_posts(user_id):
-        return list(db.roommates.find({'user_id': ObjectId(user_id)}).sort('created_at', -1))
-    
+        docs = list(Roommate.collection.find({"user_id": ObjectId(user_id)}).sort("created_at", -1))
+        return _dump(docs)
+
     @staticmethod
     def update_roommate_post(roommate_id, title=None, description=None, preferences=None, location=None):
-        update_data = {'updated_at': datetime.utcnow()}
+        update_data = {"updated_at": datetime.utcnow()}
         if title is not None:
-            update_data['title'] = title
+            update_data["title"] = title
         if description is not None:
-            update_data['description'] = description
+            update_data["description"] = description
         if preferences is not None:
-            update_data['preferences'] = preferences
+            update_data["preferences"] = preferences
         if location is not None:
-            update_data['location'] = location
-        
-        result = db.roommates.update_one(
-            {'_id': ObjectId(roommate_id)},
-            {'$set': update_data}
-        )
-        return result.modified_count > 0
-    
+            update_data["location"] = location
+
+        res = Roommate.collection.update_one({"_id": ObjectId(roommate_id)}, {"$set": update_data})
+        return res.modified_count > 0
+
     @staticmethod
     def delete_roommate_post(roommate_id):
-        result = db.roommates.delete_one({'_id': ObjectId(roommate_id)})
-        return result.deleted_count > 0
+        res = Roommate.collection.delete_one({"_id": ObjectId(roommate_id)})
+        return res.deleted_count > 0
