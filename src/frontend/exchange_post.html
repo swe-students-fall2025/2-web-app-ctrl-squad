@@ -93,6 +93,24 @@
       gap: 6px;
     }
 
+    .btn-status {
+      background: #555;
+      pointer-events: none;
+      text-decoration: none;
+      color: #fff;
+      border: 2px solid #555;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-weight: 800;
+      font-size: 16px;
+      text-align: center;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px; 
+    }
+
     .like-badge {
       font-weight: 800;
     }
@@ -110,15 +128,21 @@
       background: #fff;
       width: min(92vw, 360px);
       margin: 10% auto;
-      padding: 18px;
+      padding: 0px;
       border: 1px solid #888;
       border-radius: 12px;
+    }
+
+    .popup-frame {
+      padding: 18px;
+      padding-bottom: 0px;
     }
 
     .popup-content label {
       font-weight: 700;
       display: block;
       text-align: left;
+      margin-bottom: 10px;
     }
 
     .popup-content textarea {
@@ -134,9 +158,41 @@
     .popup-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
+      border-top: 1px solid rgba(60,60,67,.29);
       gap: 12px;
       margin-top: 12px;
     }
+
+    .btn-popup{
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      color: var(--ink-1);
+      font-size: 17px;
+      font-weight: 500;
+      padding: 12px 0;
+      cursor: pointer;
+    }
+
+    .btn-strong {
+      font-weight: 700;
+    }
+
+    .btn-popup-danger {
+      color: #ff3b30;
+    }
+
+    .btn-danger {
+      background: #c93b3b;
+      color: #fff;
+    }
+
+
+    .btn-popup + .btn-popup {
+      border-left: 1px solid rgba(60,60,67,.29);
+    }
+
 
     @media (max-width: 360px) {
       .img-skel {
@@ -169,6 +225,12 @@
 
             <!-- exchange opens popup -->
             <button class="btn-action" id="exchangeBtn" type="button">exchange</button>
+
+            <!-- if user already sent exchange request, show status 
+
+            <button class="btn-status" type="button">exchanged</button>
+            -->
+            
           </div>
         </div>
       </div>
@@ -178,12 +240,15 @@
   <!-- Popup -->
   <div id="popup" class="popup" aria-hidden="true">
     <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
-      <form id="exchangeForm">
-        <label id="popupTitle" for="message">Are you sure to exchange? Enter your contacts:</label>
-        <textarea id="message" name="message" placeholder="Write your contacts here..."></textarea>
+     
+       <form id="exchangeForm">
+        <div class="popup-frame">
+          <label id="popupTitle" for="message">Are you sure to exchange? Enter your contacts:</label>
+          <textarea id="message" name="message" placeholder="Write your contacts here..."></textarea>
+        </div>
         <div class="popup-actions">
-          <button type="button" class="btn-action" id="cancelBtn">cancel</button>
-          <button type="submit" class="btn-action" id="confirmBtn">confirm</button>
+          <button type="button" class="btn-popup" id="cancelBtn">cancel</button>
+          <button type="submit" class="btn-popup btn-strong" id="confirmBtn">confirm</button>
         </div>
       </form>
     </div>

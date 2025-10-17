@@ -38,6 +38,35 @@
             font-size: 14px;
         }
 
+        .short-skel{
+            white-space: nowrap;
+            width: fit-content;
+            background: #e6e6e6;
+            border-radius: 8px;
+            padding: 12px;
+            color: #606060;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .skel-row{
+            display: flex;
+            flex-direction: row;
+            flex-direction: wrap;
+            gap: 4px;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .categories-icon{
+            width:18px;
+            height:18px;
+            object-fit: contain;
+            display: block;
+        }
+
         .img-skel {
             width: 100%;
             aspect-ratio: 1/1;
@@ -57,6 +86,21 @@
             flex-direction: column;
             gap: 16px;
             align-items: center;
+        }
+
+        .skel-card{
+            width: 100%;
+            background: #e6e6e6;
+            border-radius: 8px;
+            padding: 12px;
+            color: #606060;
+            text-align: center;
+            font-size: 14px;
+            background-color: transparent;
+            display: flex;
+            flex-direction: column;
+            gap:12px;
+            border: 2px solid var(--border); 
         }
 
         .field {
@@ -164,6 +208,83 @@
             color: #fff;
         }
 
+        /* Popup styles */
+        /* ===== Popup styles ===== */
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .popup-content {
+      background: #fff;
+      width: min(92vw, 360px);
+      margin: 10% auto;
+      padding: 0px;
+      border: 1px solid #888;
+      border-radius: 12px;
+    }
+
+    .popup-frame {
+      padding: 18px;
+      padding-bottom: 0px;
+    }
+
+    .popup-content label {
+      font-weight: 700;
+      display: block;
+      text-align: left;
+      margin-bottom: 10px;
+    }
+
+    .popup-content textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .popup-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid rgba(60,60,67,.29);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .btn-popup{
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      color: var(--ink-1);
+      font-size: 17px;
+      font-weight: 500;
+      padding: 12px 0;
+      cursor: pointer;
+    }
+
+    .btn-strong {
+      font-weight: 700;
+    }
+
+    .btn-popup-danger {
+      color: #ff3b30;
+    }
+
+    .btn-popup + .btn-popup {
+      border-left: 1px solid rgba(60,60,67,.29);
+    }
+
+    
+
+
+
 
         .muted{ color:var(--ink-2); text-align:center; }
     </style>
@@ -178,61 +299,55 @@
             <div class="wrap">
 
                 <div class="form-block">
-                    <div class="img-skel">item<br />picture</div>
-                    <div class="skel">item category</div>
-                    <div class="skel">sender account name</div>
-
-                    <div class="field">
-                        <div class="field-label">Time sent</div>
-                        <div class="select-wrap">
-                            <select id="timeSent" class="select-control" aria-label="time sent">
-                                <option value="" selected disabled>time sent</option>
-                                <option value="1">01:00</option>
-                                <option value="2">02:00</option>
-                                <option value="3">03:00</option>
-                                <option value="4">04:00</option>
-                                <option value="5">05:00</option>
-                                <option value="6">06:00</option>
-                                <option value="7">07:00</option>
-                                <option value="8">08:00</option>
-                                <option value="9">09:00</option>
-                                <option value="10">10:00</option>
-                                <option value="11">11:00</option>
-                                <option value="12">12:00</option>
-                                <option value="13">13:00</option>
-                                <option value="14">14:00</option>
-                                <option value="15">15:00</option>
-                                <option value="16">16:00</option>
-                                <option value="17">17:00</option>
-                                <option value="18">18:00</option>
-                                <option value="19">19:00</option>
-                                <option value="20">20:00</option>
-                                <option value="21">21:00</option>
-                                <option value="22">22:00</option>
-                                <option value="23">23:00</option>
-                                <option value="24">24:00</option>
-                            </select>
-                            <div class="caret-block">
-                                <!-- category svg -->
-                                <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
-                            </div>
-                        </div>
-                    </div>
-
-                <h2 class="muted">example button below</h2>
+                   <a class="skel-card" href="exchange_post.html">
+                     <div class="img-skel">item<br />picture</div>
+                     <div class="skel-row">
+                         <div class="short-skel">
+                            <img class="categories-icon" src="../assets/categorie-electronics.svg" alt="">
+                         </div>
+                         <div class="skel">item name</div>
+                     </div>
+                   </a>
+                   <a class="skel" href="user_profile.html">From sender account name</a>
 
                 <!---- if the buyer clicked exchanged -->
 
                    <div class="buyer-trade-actions">
                      <div class="btn-trade btn-status">Status: Pending</div>
-                     <a class="btn-trade btn-danger"  href="requestCancel.html">Cancel Trade</a>
+                     <a class="btn-trade btn-danger" id="exchangeBtn">Cancel Trade</a>
                    </div>
 
-                <!---- if the seller accepts the trade -->
+                    <!-- Popup -->
+                    <div id="popup" class="popup" aria-hidden="true">
+                        <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+                        
+                        <form id="exchangeForm">
+                            <div class="popup-frame">
+                            <label id="popupTitle" for="message">Are you sure to cancel? You can't undo this action.</label>
+                            </div>
+                            <div class="popup-actions">
+                            <button type="button" class="btn-popup" id="cancelBtn">Not Now</button>
+                            <button type="submit" class="btn-popup btn-popup-danger" id="confirmBtn">Cancel</button>
+                            </div>
+                        </form>
+                        </div>
+                    </div>
+
+                <!---- if the seller accepts the trade show below
+
                 <div class="buyer-trade-actions">
                      <div class="btn-trade btn-status">Status: Accepted</div>
                      <a class="btn-trade btn-great"  href="requestConfirm.html">Confirm Trade</a>
                 </div>
+
+                <!`---- 
+                if the seller rejects the trade show below
+
+                <div class="buyer-trade-actions">
+                     <div class="btn-trade btn-status">Status: Declined</div>
+                     <a class="btn-trade btn-great"  href="TradeDelete.html">Delete Trade</a>
+                </div>
+                -->
                 
                 </div>
             </div>
@@ -268,6 +383,47 @@
             
             location.href = base + "profile.html";
         }
+
+    // ===== Popup logic =====
+    const popup = document.getElementById('popup');
+    const openBtn = document.getElementById('exchangeBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const form = document.getElementById('exchangeForm');
+
+    function openPopup() {
+      popup.style.display = 'block';
+      popup.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden'; 
+    }
+
+    function closePopup() {
+      popup.style.display = 'none';
+      popup.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    // open
+    openBtn.addEventListener('click', openPopup);
+
+    // cancel
+    function handleCancel() { closePopup(); }
+    cancelBtn.addEventListener('click', handleCancel);
+
+    function handleSubmit(e) {
+    if (e) e.preventDefault();
+    closePopup();
+    const base = location.pathname.replace(/[^\/]+$/, "");
+    location.href = base + "requestCancel.html";
+    }
+    form.addEventListener('submit', handleSubmit);
+
+    popup.addEventListener('click', (ev) => {
+      if (ev.target === popup) closePopup();
+    });
+
+    window.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && popup.style.display === 'block') closePopup();
+    });
     </script>
 </body>
 

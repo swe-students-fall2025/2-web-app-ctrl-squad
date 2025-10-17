@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -9,66 +7,170 @@
     <link rel="stylesheet" href="common_style.css">
     </head>
 
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edit Profile - CasaConnect</title>
+    <link rel="stylesheet" href="style_revised.css" />
+    <link rel="stylesheet" href="common_style.css" />
     <style>
-     .dropzone {
-      border-radius: 10px;
-      background: var(--drop);
-      height: 260px;
-      display: grid;
-      text-align: center;
-      place-items: center;
-      border: 3px solid #6aa2ff;
-      color: #000;
-      font-weight: 800;
-      margin-bottom: 16px;
-      user-select: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 5px;
-    }
+        /* Layout tweaks for a tidy edit form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+            margin-top: 8px;
+        }
 
-    .dropzone.preview {
-      position: relative;
-      overflow: hidden;
-    }
+        @media (min-width:560px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr
+            }
 
-    .dropzone .remove-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(17, 17, 17, .85);
-      color: #fff;
-      border: 0;
-      border-radius: 8px;
-      font-size: 12px;
-      padding: 6px 8px;
-      cursor: pointer;
-    }
+            .form-grid .full {
+                grid-column: 1 / -1
+            }
+        }
 
-    .btn-post {
-      background: #111;
-      color: #fff;
-      border: 0;
-      border-radius: 8px;
-      padding: 12px 36px;
-      font-weight: 800;
-      cursor: pointer;
-    }
+        label {
+            font-weight: 700
+        }
 
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font: inherit
+        }
+
+        textarea {
+            resize: vertical
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--ink-2, #666)
+        }
+
+        .actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px
+        }
+
+        .btn-post {
+            background: #111;
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-weight: 800;
+            cursor: pointer
+        }
+
+        .btn-secondary {
+            background: #e9e9e9;
+            color: #111;
+            border: 0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-weight: 700;
+            cursor: pointer
+        }
+
+        /* Dropzone */
+        .dropzone {
+            border-radius: 12px;
+            background: var(--drop, #d9d9d9);
+            height: 260px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 3px dashed #6aa2ff;
+            color: #000;
+            font-weight: 800;
+            gap: 6px;
+            user-select: none
+        }
+
+        .dropzone:focus {
+            outline: 3px solid #6aa2ff
+        }
+
+        .dropzone.preview {
+            position: relative;
+            overflow: hidden;
+            border-style: solid
+        }
+
+        .dropzone .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(17, 17, 17, .85);
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            font-size: 12px;
+            padding: 6px 8px;
+            cursor: pointer
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .btn-back {
+            background: var(--accent, #111);
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-weight: 700;
+            cursor: pointer
+        }
     </style>
+</head>
 
+<body class="no-footer">
+    <div class="screen">
+        <div class="phone">
+            <div class="topbar">
+                <button class="btn-back" type="button" onclick="window.location.href='profile.html'">Back</button>
+            </div>
 
-    <body class="no-footer">
-        <div class="screen">
-            <div class="phone">
+            <h1>Edit Profile</h1>
 
-                      <div class="topbar">
-        <button class="btn-back" type="button" onclick="window.location.href='profile.html'">Back</button>
-      </div>
+            <!-- Profile picture uploader -->
+            <div class="full" style="margin:10px 0 18px">
+                <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload profile picture">
+                    Profile Picture<br><span class="hint">Click or drag an image (PNG/JPG/WebP/GIF, ≤ 5 MB)</span>
+                </div>
+                <input id="imageInput" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                    hidden />
+            </div>
 
+            <!-- Use method="post" (PUT is sent by fetch below). action kept for clarity but JS prevents default. -->
+            <form id="profileForm" action="http://localhost:5000/api/users/profile" method="post" novalidate>
+                <div class="form-grid">
+                    <div>
+                        <label for="account_name">Name</label>
+                        <input type="text" id="account_name" name="account_name" autocomplete="name" required
+                            placeholder="Your display name" />
+                    </div>
 
-             <h1>Edit Profile</h1>
+                    <div>
+                        <label for="email">Email address</label>
+                        <input type="email" id="email" name="email" autocomplete="email" pattern="^[^@\\s]+@nyu\\.edu$"
+                            title="Must be an NYU email address (…@nyu.edu)" required placeholder="netid@nyu.edu" />
+                        <div class="hint">Use your NYU email (…@nyu.edu)</div>
+                    </div>
 
         <form id="profileForm">
             <div id="dropzone" class="dropzone" role="button" tabindex="0">
@@ -151,34 +253,38 @@
               dropzone.addEventListener('click', openPicker);
               dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
 
-              fileInput.addEventListener('change', () => {
-                const file = fileInput.files && fileInput.files[0];
-                if (!file) return;
-                if (!ACCEPTED.includes(file.type)) { alert('please upload png/jpg/jpeg/webp/gif'); fileInput.value = ''; return; }
-                if (file.size / (1024 * 1024) > MAX_MB) { alert('maximum 5MB'); fileInput.value = ''; return; }
+            function loadPreview(file) {
                 const reader = new FileReader();
                 reader.onload = () => {
-                  dropzone.classList.add('preview');
-                  dropzone.innerHTML = `
-                    <img src="${reader.result}" alt="preview" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
-                    <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
-                  `;
-                  dropzone.querySelector('.remove-btn').addEventListener('click', () => {
-                    dropzone.classList.remove('preview');
-                    dropzone.innerHTML = 'Profile Picture';
-                    fileInput.value = '';
-                  });
+                    dropzone.classList.add('preview');
+                    dropzone.innerHTML = `
+            <img src="${reader.result}" alt="preview" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
+            <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
+          `;
+                    dropzone.querySelector('.remove-btn').addEventListener('click', () => {
+                        dropzone.classList.remove('preview');
+                        dropzone.innerHTML = 'Profile Picture<br><span class="hint">Click or drag an image (PNG/JPG/WebP/GIF, ≤ 5 MB)</span>';
+                        fileInput.value = '';
+                    });
                 };
                 reader.readAsDataURL(file);
-              });
+            }
 
-              ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
-                e.preventDefault(); e.stopPropagation(); dropzone.style.outline = '3px solid #6aa2ff';
-              }));
-              ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, e => {
-                e.preventDefault(); e.stopPropagation(); dropzone.style.outline = 'none';
-              }));
-              dropzone.addEventListener('drop', e => {
+            fileInput.addEventListener('change', () => {
+                const file = fileInput.files && fileInput.files[0];
+                if (!file) return;
+                if (!ACCEPTED.includes(file.type)) { alert('Please upload png/jpg/jpeg/webp/gif.'); fileInput.value = ''; return; }
+                if (file.size / (1024 * 1024) > MAX_MB) { alert('Maximum size is 5MB.'); fileInput.value = ''; return; }
+                loadPreview(file);
+            });
+
+            ['dragenter', 'dragover'].forEach(evt =>
+                dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.style.outline = '3px solid #6aa2ff'; })
+            );
+            ['dragleave', 'drop'].forEach(evt =>
+                dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.style.outline = 'none'; })
+            );
+            dropzone.addEventListener('drop', e => {
                 const file = e.dataTransfer.files && e.dataTransfer.files[0];
                 if (!file) return;
                 const dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files;
@@ -250,6 +356,7 @@
                     alert('Failed to load profile data. Please try again later.');
                 }
             });
+        })();
 
             // Handle form submission
             document.getElementById('profileForm').addEventListener('submit', async (e) => {
@@ -308,6 +415,11 @@
                         reader.readAsDataURL(file);
                     });
                 }
+            } catch (err) {
+                console.error('Error loading profile:', err);
+                alert('Failed to load profile data. Please try again later.');
+            }
+        });
 
                 try {
                     const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
@@ -342,5 +454,12 @@
                     const errorMessage = error.message || 'Failed to update profile. Please try again later.';
                     alert(errorMessage);
                 }
-            });
-        </script>
+            } catch (error) {
+                console.error('Update error:', error);
+                alert(error.message || 'Failed to update profile. Please try again later.');
+            }
+        });
+    </script>
+</body>
+
+</html>

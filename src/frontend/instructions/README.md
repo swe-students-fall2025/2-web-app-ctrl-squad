@@ -208,9 +208,7 @@
     - `buyer_id`: ObjectId of the user initiating the trade (buyer)
     - `seller_id`: ObjectId of the user offering the item (seller)
     - `item_name`: Name of the item being traded
-    - `description`: Description of the item
     - `images`: List of image URLs or paths (optional)
-    - `trade_preferences`: Dictionary of trade preferences (optional)
     - `status`: Trade status (`open`, `pending`, `accepted`, `completed`, `cancelled`)
     - `created_at`: Timestamp when the trade was created
     - `updated_at`: Timestamp when the trade was last updated
