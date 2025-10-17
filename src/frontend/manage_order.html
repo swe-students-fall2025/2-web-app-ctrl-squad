@@ -43,6 +43,7 @@
             border-radius: 12px;
             padding: 10px 12px;
             min-height: 32px;
+            width: 100%;
             display: flex;
             align-items: center;
             color: #606060;
@@ -51,12 +52,13 @@
             white-space: nowrap;
         }
 
+        .post-head .skel-input { width: auto !important; flex: 1; }
+
         .badge {
             text-decoration: none;
             color: #fff;
             background: #000;
-            border: 2px solid #000;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 12px;
             font-size: 12px;
             white-space: nowrap;
@@ -122,6 +124,29 @@
                 grid-template-columns: 1fr;
             }
         }
+
+
+        .btn-status {
+            pointer-events: none;
+        }
+
+        .btn-notice{
+            background:#f0a500;
+            color: #fff;
+        }
+
+        .btn-danger{
+            background:#c93b3b;
+            color:#fff;
+        }
+
+        .btn-great{
+            background: #62905e;
+            color: #fff;
+        }
+        .muted{ color:var(--ink-2); text-align:center; }
+
+
     </style>
 </head>
 
@@ -140,7 +165,7 @@
                         <!-- sample post lists -->
                         <article class="post">
                             <div class="post-head">
-                                <div class="skel-input" style="width:180px;">post title</div>
+                                <a class="skel-input" href="exchange_post.html" style="width:250px;">post title</a>
                                 <a class="badge" href="buyer_trade_page.html">View Status</a>
                             </div>
                             <div class="post-body">
@@ -155,8 +180,8 @@
 
                         <article class="post">
                             <div class="post-head">
-                                <div class="skel-input" style="width:180px;">post title</div>
-                                <a class="badge" href="buyer_trade.html">View Status</a>
+                                <a class="skel-input" href="exchange_post.html">post title</a>
+                                <a class="badge" href="buyer_trade_page.html">View Status</a>
                             </div>
                             <div class="post-body">
                                 <div class="media">image /<br> Description</div>
@@ -173,10 +198,12 @@
                     <h2 class="page-title">Completed</h2>
                     <div class="wrap">
                         <!-- sample post lists -->
+
+                         <!-- type 1: cancelled trade - meaning user cancelled the trade or the seller reject the trade -->
                         <article class="post">
                             <div class="post-head">
-                                <div class="skel-input" style="width:180px;">post title</div>
-                                <div class="badge cancelled" href="buyer_trade.html">Cancelled</div>
+                                <a class="skel-input" href="exchange_post.html">post title</a>
+                                <div class="badge btn-danger" href="buyer_trade.html">Cancelled</div>
                             </div>
                             <div class="post-body">
                                 <div class="media">image /<br> Description</div>
@@ -188,10 +215,11 @@
                             </div>
                         </article>
 
+                         <!-- type 2: incomplete trade - meaning trade is approved but the app doesn't know if it was successful offline -->
                         <article class="post">
                             <div class="post-head">
-                                <div class="skel-input" style="width:180px;">post title</div>
-                                <a class="badge" href="buyer_trade.html">Confirm Status</a>
+                                <a class="skel-input" href="exchange_post.html" >post title</a>
+                                <a class="badge btn-notice" href="buyer_trade.html">Confirm Status</a>
                             </div>
                             <div class="post-body">
                                 <div class="media">image /<br> Description</div>
@@ -203,9 +231,11 @@
                             </div>
                         </article>
 
+                        <!-- type 3: completed - meaning trade is completed successfully offline -->
+
                         <article class="post">
                             <div class="post-head">
-                                <div class="skel-input" style="width:180px;">post title</div>
+                                <div class="skel-input">post title</div>
                                 <a class="badge" href="buyer_trade.html">View Receipt</a>
                             </div>
                             <div class="post-body">

@@ -208,6 +208,83 @@
             color: #fff;
         }
 
+        /* Popup styles */
+        /* ===== Popup styles ===== */
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .popup-content {
+      background: #fff;
+      width: min(92vw, 360px);
+      margin: 10% auto;
+      padding: 0px;
+      border: 1px solid #888;
+      border-radius: 12px;
+    }
+
+    .popup-frame {
+      padding: 18px;
+      padding-bottom: 0px;
+    }
+
+    .popup-content label {
+      font-weight: 700;
+      display: block;
+      text-align: left;
+      margin-bottom: 10px;
+    }
+
+    .popup-content textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .popup-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid rgba(60,60,67,.29);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .btn-popup{
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      color: var(--ink-1);
+      font-size: 17px;
+      font-weight: 500;
+      padding: 12px 0;
+      cursor: pointer;
+    }
+
+    .btn-strong {
+      font-weight: 700;
+    }
+
+    .btn-popup-danger {
+      color: #ff3b30;
+    }
+
+    .btn-popup + .btn-popup {
+      border-left: 1px solid rgba(60,60,67,.29);
+    }
+
+    
+
+
+
 
         .muted{ color:var(--ink-2); text-align:center; }
     </style>
@@ -233,21 +310,44 @@
                    </a>
                    <a class="skel" href="user_profile.html">From sender account name</a>
 
-
-                <h2 class="muted">example button below</h2>
-
                 <!---- if the buyer clicked exchanged -->
 
                    <div class="buyer-trade-actions">
                      <div class="btn-trade btn-status">Status: Pending</div>
-                     <a class="btn-trade btn-danger"  href="requestCancel.html">Cancel Trade</a>
+                     <a class="btn-trade btn-danger" id="exchangeBtn">Cancel Trade</a>
                    </div>
 
-                <!---- if the seller accepts the trade -->
+                    <!-- Popup -->
+                    <div id="popup" class="popup" aria-hidden="true">
+                        <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+                        
+                        <form id="exchangeForm">
+                            <div class="popup-frame">
+                            <label id="popupTitle" for="message">Are you sure to cancel? You can't undo this action.</label>
+                            </div>
+                            <div class="popup-actions">
+                            <button type="button" class="btn-popup" id="cancelBtn">Not Now</button>
+                            <button type="submit" class="btn-popup btn-popup-danger" id="confirmBtn">Cancel</button>
+                            </div>
+                        </form>
+                        </div>
+                    </div>
+
+                <!---- if the seller accepts the trade show below
+
                 <div class="buyer-trade-actions">
                      <div class="btn-trade btn-status">Status: Accepted</div>
                      <a class="btn-trade btn-great"  href="requestConfirm.html">Confirm Trade</a>
                 </div>
+
+                <!`---- 
+                if the seller rejects the trade show below
+
+                <div class="buyer-trade-actions">
+                     <div class="btn-trade btn-status">Status: Declined</div>
+                     <a class="btn-trade btn-great"  href="TradeDelete.html">Delete Trade</a>
+                </div>
+                -->
                 
                 </div>
             </div>
@@ -283,6 +383,47 @@
             
             location.href = base + "profile.html";
         }
+
+    // ===== Popup logic =====
+    const popup = document.getElementById('popup');
+    const openBtn = document.getElementById('exchangeBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const form = document.getElementById('exchangeForm');
+
+    function openPopup() {
+      popup.style.display = 'block';
+      popup.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden'; 
+    }
+
+    function closePopup() {
+      popup.style.display = 'none';
+      popup.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    // open
+    openBtn.addEventListener('click', openPopup);
+
+    // cancel
+    function handleCancel() { closePopup(); }
+    cancelBtn.addEventListener('click', handleCancel);
+
+    function handleSubmit(e) {
+    if (e) e.preventDefault();
+    closePopup();
+    const base = location.pathname.replace(/[^\/]+$/, "");
+    location.href = base + "requestCancel.html";
+    }
+    form.addEventListener('submit', handleSubmit);
+
+    popup.addEventListener('click', (ev) => {
+      if (ev.target === popup) closePopup();
+    });
+
+    window.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && popup.style.display === 'block') closePopup();
+    });
     </script>
 </body>
 

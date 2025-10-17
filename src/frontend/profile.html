@@ -71,6 +71,8 @@
       white-space: nowrap;
     }
 
+    .post-head .skel-input { width: auto !important; flex: 1; }
+
     /* edit button */
     .pill {
       display: inline-flex;
@@ -193,8 +195,8 @@
             pointer-events: none;
         }
 
-        .btn-neutral {
-            background: #777;
+        .btn-notice{
+            background:#f0a500;
             color: #fff;
         }
 
@@ -337,6 +339,37 @@
           <p class="muted">Loading your posts...</p>
         </div>
 
+        <article class="post">
+          <div class="post-head">
+            <a class="skel-input"  href="exchange_post.html">post title</a>
+            <a class="badge btn-notice" href="seller_trade_page.html"> New Request</a>
+          </div>
+          <div class="post-body">
+            <div class="media">image / description</div>
+            <div class="meta">
+              <div class="skel-chip">favorites</div>
+              <div class="skel-chip">username</div>
+              <div class="skel-chip">time posted</div>
+            </div>
+          </div>
+        </article>
+
+        <div class="spacer"></div>
+      
+        <article class="post">
+          <div class="post-head">
+            <a class="skel-input" href="exchange_post.html">post title</a>
+            <a class="badge btn-great" href="seller_trade_page.html"> Matched</a>
+          </div>
+          <div class="post-body">
+            <div class="media">image / description</div>
+            <div class="meta">
+              <div class="skel-chip">favorites</div>
+              <div class="skel-chip">username</div>
+              <div class="skel-chip">time posted</div>
+            </div>
+          </div>
+        </article>
         <script>
           // Function to format date
           function formatDate(dateString) {
