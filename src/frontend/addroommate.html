@@ -294,18 +294,25 @@ function smartBack() {
   // --- Submit form ---
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+      // disable button to prevent double submit
+    const btn = form.querySelector('.btn-post');
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Posting...';
 
-    const formData = new FormData(form);
-    const title = (formData.get('title') || '').trim();
-    const description = (formData.get('description') || '').trim();
-    const location = (formData.get('place_to_live') || '').trim();
-    const year = formData.get('year');
+  try {
+      const formData = new FormData(form);
+      const title = (formData.get('title') || '').trim();
+      const description = (formData.get('description') || '').trim();
+      const location = (formData.get('place_to_live') || '').trim();
+      const year = formData.get('year');
 
-    if (!title || !description) {
-      alert('Title and Description are required.');
-      return;
-    }
-
+      if (!title || !description) {
+        alert('Title and Description are required.');
+        btn.disabled = false;
+        btn.querySelector('span').textContent = 'Post';
+        return;
+      }
     // Convert images to Base64 URLs
     const images = [];
     if (fileInput.files.length > 0) {
@@ -335,7 +342,7 @@ function smartBack() {
       images
     };
 
-    try {
+    
       const res = await fetch(form.action, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -343,20 +350,37 @@ function smartBack() {
         body: JSON.stringify(roommateData)
       });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  // interpret response safely
+  const text = await res.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch {}
 
-      alert('Roommate post created!');
-      console.log('Created roommate post:', data);
+  // handle auth
+    if (res.status === 401) {
+    alert('You must be logged in. Please sign in and try again.');
+    return;
+  }
+  const isSuccess = (res.status === 201 || res.status === 200) &&
+                    (data.success === true || data.ok === true);
 
-      // Optional redirect
-      // location.href = 'post_confirm.html';
-    } catch (error) {
-      console.error('Error:', error);
-      alert(error.message || 'Failed to create roommate post. Please try again later.');
-    }
-  });
+  if (!isSuccess) {
+    alert(data.error || `Request failed (${res.status})`);
+    return;
+  }
+
+  alert('Roommate post created!');
+  window.location.href = 'profile_posts.html';
+  
+  } catch (error) {
+    console.error('Error:', error);
+    alert(error.message || 'Failed to create roommate post. Please try again later.');
+  } finally {
+    btn.disabled = false;
+    btn.querySelector('span').textContent = 'Post';
+  }
+});
 })();
+
 </script>
 </body>
 
