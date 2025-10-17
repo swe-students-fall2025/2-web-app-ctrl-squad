@@ -9,7 +9,6 @@
 
   <style>
     .footer-nav .item-link,
-    .footer-nav .item-link:visited,
     .footer-nav .item-link:hover,
     .footer-nav .item-link:focus,
     .footer-nav .item-link:active {
@@ -273,16 +272,26 @@
               });
 
               if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Profile fetch failed:', response.status, errorData);
+                
                 if (response.status === 401) {
                   // Token expired or invalid
                   localStorage.removeItem('token');
                   window.location.href = 'login.html';
                   return;
                 }
-                throw new Error('Failed to fetch profile');
+                
+                throw new Error(errorData.error || 'Failed to fetch profile');
               }
 
-              const profile = await response.json();
+              const { success, data: profile } = await response.json();
+              console.log('Profile response:', { success, profile });
+              
+              if (!success || !profile) {
+                throw new Error('Invalid profile data received');
+              }
+
               const info = document.querySelector('#profileInfo .info');
               
               info.innerHTML = `
@@ -295,11 +304,11 @@
                   <div></div>
                 </div>
                 <div class="row-compact">
-                  <div class="skel-input" aria-label="nyu id">${profile.nyuId || 'No NYU ID set'}</div>
+                  <div class="skel-input" aria-label="nyu id">${profile.nyu_id || 'No NYU ID set'}</div>
                   <div></div>
                 </div>
                 <div class="row-compact">
-                  <div class="skel-input" aria-label="location">${profile.location || 'No location set'}</div>
+                  <div class="skel-input" aria-label="email">${profile.email || 'No email set'}</div>
                   <div></div>
                 </div>
               `;
