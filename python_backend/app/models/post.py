@@ -15,14 +15,18 @@ class Post:
     collection = db.posts
     
     @staticmethod
-    def create_post(user_id, title, description, images=None, price=None):
+    def create_post(user_id, title, description, type='item', category=None, condition=None, images=None, price=None, status='Available'):
         try:
             post_data = {
                 'user_id': ObjectId(user_id),
                 'title': title,
                 'description': description,
+                'type': type,
+                'category': category,
+                'condition': condition,
                 'images': images or [],
                 'price': price,
+                'status': status,
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }
