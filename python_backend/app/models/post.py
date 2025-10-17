@@ -15,14 +15,18 @@ class Post:
     collection = db.posts
     
     @staticmethod
-    def create_post(user_id, title, description, images=None, price=None):
+    def create_post(user_id, title, description, type='item', category=None, condition=None, images=None, price=None, status='Available'):
         try:
             post_data = {
                 'user_id': ObjectId(user_id),
                 'title': title,
                 'description': description,
+                'type': type,
+                'category': category,
+                'condition': condition,
                 'images': images or [],
                 'price': price,
+                'status': status,
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()
             }
@@ -43,10 +47,43 @@ class Post:
             raise
     
     @staticmethod
-    def get_all_posts():
+    def get_posts_by_user(user_id):
         try:
-            posts = list(Post.collection.find().sort('created_at', -1))
+            posts = list(Post.collection.find({'user_id': ObjectId(user_id)}).sort('created_at', -1))
             return json.loads(json.dumps(posts, cls=JSONEncoder))
+        except Exception as e:
+            print(f"Error getting posts by user: {e}")
+            raise
+
+    @staticmethod
+    def delete_post(post_id):
+        try:
+            result = Post.collection.delete_one({'_id': ObjectId(post_id)})
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting post: {e}")
+            raise
+
+    @staticmethod
+    def get_all_posts(page: int = 1, limit: int = 20):
+        try:
+            query = {}
+            total = Post.collection.count_documents(query)
+
+            # compute skip safely
+            page = max(1, int(page))
+            limit = max(1, min(int(limit), 100))  
+            skip = (page - 1) * limit
+
+            cursor = (
+                    Post.collection.find(query)
+                    .sort('created_at', -1)
+                    .skip(skip)
+                    .limit(limit)
+                    )
+
+            posts = list(cursor)
+            return json.loads(json.dumps(posts, cls=JSONEncoder)), total
         except Exception as e:
             print(f"Error getting all posts: {e}")
             raise
@@ -87,7 +124,3 @@ class Post:
             raise
         return result.modified_count > 0
     
-    @staticmethod
-    def delete_post(post_id):
-        result = db.posts.delete_one({'_id': ObjectId(post_id)})
-        return result.deleted_count > 0

@@ -1,133 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>My Posts - CasaConnect</title>
-  <link rel="stylesheet" href="style_revised.css" />
-  <link rel="stylesheet" href="common_style.css" />
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>My Posts - CasaConnect</title>
+        <link rel="stylesheet" href="style_revised.css"/>
+        <link rel="stylesheet" href="common_style.css"/>
+    </head>
 
-  <style>
-    /* ===== Popup styles ===== */
-    .popup {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      background: rgba(0,0,0,.4);
-    }
-    .popup-content {
-      background: #fff;
-      width: min(92vw, 360px);
-      margin: 10% auto;
-      padding: 18px;
-      border: 1px solid #888;
-      border-radius: 12px;
-      text-align: center;
-    }
-    .popup-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .btn-action {
-      color:#fff;
-      background:#000;
-      border:2px solid #000;
-      border-radius:10px;
-      padding:10px 14px;
-      font-weight:800;
-      cursor:pointer;
-    }
+    <body>
+        <div class="screen">
+            <div class="phone profile-posts">
+                <h1>My Posts</h1>
 
-    /* Basic card/button layout */
-    .btn.btn-danger {
-      background:#c93b3b;
-      color:#fff;
-      border:0;
-      border-radius:8px;
-      padding:8px 14px;
-      font-weight:800;
-    }
-    .btn.secondary {
-      background:#111;
-      color:#fff;
-      border-radius:8px;
-      padding:8px 14px;
-      font-weight:800;
-      text-decoration:none;
-    }
-    .inline { display:inline; }
-    .post-card {
-      padding:12px;
-      border-radius:12px;
-      background:#f6f6f6;
-      margin-bottom:14px;
-    }
-    .post-header {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-    .badges .badge {
-      background:#e6e6e6;
-      border-radius:8px;
-      padding:4px 8px;
-      margin-left:6px;
-      font-weight:700;
-    }
-    .actions { display:flex; gap:10px; align-items:center; }
-    .muted { color:#666; text-align:center; }
-  </style>
-</head>
-
-<body>
-  <div class="screen">
-    <div class="phone profile-posts">
-      <h1>My Posts</h1>
-
-      <div class="list">
-        <!-- ====== First Post Card ====== -->
-        <article class="post-card">
-          <div class="post-header">
-            <strong>Lamp</strong>
-            <div class="badges">
-              <span class="badge">Good</span>
-              <span class="badge">Available</span>
-            </div>
-          </div>
-          <p class="post-body">Simple desk lamp.</p>
-
-          <div class="actions">
-            <a class="btn secondary" href="exchange_post.html">View</a>
-
-            <!-- Each post has its own delete form -->
-            <form class="inline" action="/item/1/delete" method="post">
-              <!-- Delete button triggers popup -->
-              <button class="btn btn-danger" type="button" onclick="handleDelete(this)">Delete</button>
-
-              <!-- Popup embedded inside this form -->
-              <div class="popup">
-                <div class="popup-content">
-                  <p style="font-size:inherit;">Are you sure you want to delete?</p>
-                  <div class="popup-actions">
-                    <button type="button" class="btn-action" onclick="handleCancel(this)">cancel</button>
-                    <button type="button" class="btn-action" onclick="handleSubmit(this)">confirm</button>
-                  </div>
+                <div class="list">
+                    <article class="post-card">
+                        <div class="post-header">
+                            <strong>Loading...</strong> 
+                            <div class="badges">
+                                <span class="badge">Loading...</span>
+                            </div>
+                        </div>
+                        <p class="post-body">Loading your posts...</p>
+                    </article>
                 </div>
-              </div>
-            </form>
-          </div>
-        </article>
+                <p id="no-posts" class="muted" style="display: none">You haven't posted anything yet.</p>
+                <a class="btn block mt-2" href="additem.html">Create a post</a>
 
-        <!-- ====== Second Post Card ====== -->
-        <article class="post-card">
-          <div class="post-header">
-            <strong>Chair</strong>
-            <div class="badges">
-              <span class="badge">Like new</span>
-              <span class="badge">Exchanged</span>
+                <script>
+                    async function loadPosts() {
+                        try {
+                            const response = await fetch('http://localhost:5000/api/users/profile/posts', {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'Origin': window.location.origin
+                                },
+                                credentials: 'include',
+                                mode: 'cors',
+                                cache: 'no-store'
+                            });
+
+                            if (response.status === 401 || response.status === 403) {
+                                window.location.href = 'login.html';
+                                return;
+                            }
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            const data = await response.json();
+                            if (data.success) {
+                                displayPosts(data.posts);
+                            } else {
+                                throw new Error(data.error || 'Failed to fetch posts');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            document.querySelector('.list').innerHTML = `
+                                <p class="error">Failed to load posts. Please try again.</p>
+                            `;
+                        }
+                    }
+
+                    function displayPosts(posts) {
+                        const postsContainer = document.querySelector('.list');
+                        const noPostsMessage = document.getElementById('no-posts');
+
+                        if (!posts || posts.length === 0) {
+                            postsContainer.innerHTML = '';
+                            noPostsMessage.style.display = 'block';
+                            return;
+                        }
+
+                        noPostsMessage.style.display = 'none';
+                        postsContainer.innerHTML = posts.map(post => `
+                            <article class="post-card">
+                                <div class="post-header">
+                                    <strong>${post.title}</strong> 
+                                    <div class="badges">
+                                        ${post.type === 'item' ? `
+                                            <span class="badge">${post.condition || 'N/A'}</span>
+                                            ${post.price ? `<span class="badge price">$${post.price}</span>` : ''}
+                                        ` : ''}
+                                        ${post.category ? `<span class="badge category">${post.category}</span>` : ''}
+                                        <span class="badge status">${post.status || 'Available'}</span>
+                                    </div>
+                                </div>
+                                <p class="post-body">${post.description}</p>
+                                ${post.images && post.images.length > 0 ? `
+                                    <div class="post-images">
+                                        <img src="${post.images[0]}" alt="Post image" class="post-image">
+                                        ${post.images.length > 1 ? `<span class="more-images">+${post.images.length - 1} more</span>` : ''}
+                                    </div>
+                                ` : ''}
+                                <div class="post-details">
+                                    <small class="text-muted">Posted: ${new Date(post.created_at).toLocaleDateString()}</small>
+                                </div>
+                                <div class="actions">
+                                    <a class="btn secondary" href="singlePost.html?id=${post._id}">View</a>
+                                    <button class="btn" onclick="editPost('${post._id}')">Edit</button>
+                                    <button class="btn btn-danger" onclick="deletePost('${post._id}')">Delete</button>
+                                </div>
+                            </article>
+                        `).join('');
+                    }
+
+                    async function deletePost(postId) {
+                        if (!confirm('Are you sure you want to delete this post?')) {
+                            return;
+                        }
+
+                        try {
+                            const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                credentials: 'include',
+                                mode: 'cors'
+                            });
+
+                            if (response.status === 401 || response.status === 403) {
+                                window.location.href = 'login.html';
+                                return;
+                            }
+
+                            if (response.ok) {
+                                loadPosts();
+                            } else {
+                                const data = await response.json();
+                                alert(data.error || 'Failed to delete post');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Failed to delete post. Please try again.');
+                        }
+                    }
+
+                    // Load posts when page loads
+                    document.addEventListener('DOMContentLoaded', loadPosts);
+                </script>
+            </div>
+        </div>
+    </body>
+</html>
+
+                    // Load all posts when page loads
+                    document.addEventListener('DOMContentLoaded', () => loadPosts('all'));
+                
+                            <form class="inline" action="/item/2/delete" method="post" onsubmit="return confirm('Delete this post?')">
+                            <button class="btn btn-danger" type="submit">Delete</button>
+                </form>
             </div>
           </div>
           <p class="post-body">Foldable chair.</p>
