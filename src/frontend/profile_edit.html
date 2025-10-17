@@ -6,7 +6,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Profile - CasaConnect</title>
-    <link rel="stylesheet" href="style_revised.css">
     <link rel="stylesheet" href="common_style.css">
     </head>
 
@@ -71,17 +70,23 @@
 
              <h1>Edit Profile</h1>
 
-        <form id="profileForm" action="http://localhost:5000/api/users/profile" method="put">
+        <form id="profileForm">
+            <div id="dropzone" class="dropzone" role="button" tabindex="0">
+                Profile Picture
+            </div>
+            <input type="file" id="imageInput" accept="image/*" style="display:none">
+
             <label>Name</label>
-                <input type="text" name="account_name" id="account_name" required>
+            <input type="text" name="username" id="username" required>
+            
             <label>Email address</label> 
-                <input type="email" name="email" id="email" pattern=".+@nyu\.edu$" title="Must be an NYU email address" required>
+            <input type="email" name="email" id="email" pattern=".+@nyu\.edu$" title="Must be an NYU email address" required>
+            
             <label>NYU ID</label>
-                <input type="text" name="nyu_id" id="nyu_id" pattern="N[0-9]{8}" title="Must be in format N12345678" required>
-            <label>Bio</label>
-                <textarea name="bio" id="bio" rows="3" maxlength="280"></textarea>
+                <input type="text" name="nyu_id" id="nyu_id" required>            <label>Bio</label>
+            <textarea name="bio" id="bio" rows="3" maxlength="280"></textarea>
         
-            <button  class="btn-post" type="submit">Save changes</button>
+            <button class="btn-post" type="submit">Save changes</button>
         </form>
 
         
@@ -136,24 +141,54 @@
         </script>
 
         <script>
+            // Check authentication and redirect if not logged in
+            function checkAuth() {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.log('No auth token, redirecting to login');
+                    window.location.href = 'login.html';
+                    return null;
+                }
+                return token;
+            }
+
             // Fetch and populate user data when page loads
             document.addEventListener('DOMContentLoaded', async () => {
+                const token = checkAuth();
+                if (!token) return;
+
                 try {
-                    const response = await fetch('http://localhost:5000/api/users/profile');
-                    if (!response.ok) throw new Error('Failed to fetch profile');
+                    const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        throw new Error('Failed to fetch profile');
+                    }
                     
-                    const data = await response.json();
-                    if (data.success) {
-                        document.getElementById('account_name').value = data.data.account_name || '';
-                        document.getElementById('email').value = data.data.email || '';
-                        document.getElementById('nyu_id').value = data.data.nyu_id || '';
-                        document.getElementById('bio').value = data.data.bio || '';
+                    const { success, data: profile } = await response.json();
+                    if (success && profile) {
+                        document.getElementById('account_name').value = profile.account_name || '';
+                        document.getElementById('email').value = profile.email || '';
+                        document.getElementById('nyu_id').value = profile.nyu_id || '';
+                        document.getElementById('bio').value = profile.bio || '';
+                        
                         // If user has a profile image, show it in dropzone
-                        if (data.data.profile_image) {
+                        if (profile.profile_image) {
                             const dropzone = document.getElementById('dropzone');
                             dropzone.classList.add('preview');
                             dropzone.innerHTML = `
-                                <img src="${data.data.profile_image}" alt="preview" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
+                                <img src="${profile.profile_image}" alt="preview" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
                                 <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
                             `;
                             dropzone.querySelector('.remove-btn').addEventListener('click', () => {
@@ -173,6 +208,9 @@
             document.getElementById('profileForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
+                const token = checkAuth();
+                if (!token) return;
+
                 // Validate NYU email
                 const email = document.getElementById('email').value;
                 if (!email.endsWith('@nyu.edu')) {
@@ -180,20 +218,38 @@
                     return;
                 }
 
-                // Validate NYU ID format
-                const nyuId = document.getElementById('nyu_id').value;
-                if (!/^N\d{8}$/.test(nyuId)) {
-                    alert('NYU ID must be in the format N12345678');
+                // NYU ID format validation is handled by input pattern
+
+                // Get form values
+                const usernameField = document.getElementById('username');
+                const nyuIdField = document.getElementById('nyu_id');
+                const bioField = document.getElementById('bio');
+                
+                // Log field values for debugging
+                console.log('Form field values:', {
+                    username: usernameField.value,
+                    email: email,
+                    nyu_id: nyuIdField.value,
+                    bio: bioField.value
+                });
+
+                // Just check if NYU ID is empty
+                const nyuId = nyuIdField.value.trim();
+                if (!nyuId) {
+                    alert('NYU ID cannot be empty');
+                    nyuIdField.focus();
                     return;
                 }
 
                 // Prepare the update data
                 const updateData = {
-                    account_name: document.getElementById('account_name').value,
+                    username: usernameField.value,
                     email: email,
                     nyu_id: nyuId,
-                    bio: document.getElementById('bio').value
+                    bio: bioField.value
                 };
+
+                console.log('Sending update data:', updateData); // Debug log
 
                 // Handle profile image (convert to base64 if selected)
                 const fileInput = document.getElementById('imageInput');
@@ -207,26 +263,37 @@
                 }
 
                 try {
-                    const response = await fetch('http://localhost:5000/api/users/profile', {
+                    const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
                         method: 'PUT',
                         headers: {
+                            'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json'
                         },
+                        credentials: 'include',
                         body: JSON.stringify(updateData)
                     });
 
                     const data = await response.json();
                     if (!response.ok) {
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            window.location.href = 'login.html';
+                            return;
+                        }
                         throw new Error(data.error || 'Failed to update profile');
                     }
 
                     if (data.success) {
                         alert('Profile updated successfully!');
                         window.location.href = 'profile.html';
+                        return;
                     }
+                    throw new Error(data.error || 'Failed to update profile');
                 } catch (error) {
                     console.error('Error:', error);
-                    alert(error.message || 'Failed to update profile. Please try again later.');
+                    const errorMessage = error.message || 'Failed to update profile. Please try again later.';
+                    alert(errorMessage);
                 }
             });
         </script>

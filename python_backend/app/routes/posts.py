@@ -30,20 +30,42 @@ def get_posts():
 @bp.route('/posts', methods=['POST'])
 @login_required
 def create_post():
+    print("Creating new post...")
     data = request.get_json()
+    print("Received data:", data)
     
     if not all(k in data for k in ('title', 'description')):
-        return jsonify({'error': 'Missing required fields'}), 400
+        print("Missing required fields")
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
     
-    post = Post.create_post(
-        user_id=current_user.id,
-        title=data['title'],
-        description=data['description'],
-        images=data.get('images'),
-        price=data.get('price')
-    )
-    
-    return jsonify(post), 201
+    try:
+        print(f"Creating post for user: {current_user.id}")
+        post = Post.create_post(
+            user_id=current_user.id,
+            title=data['title'],
+            description=data['description'],
+            type=data.get('type', 'item'),
+            category=data.get('category'),
+            condition=data.get('condition'),
+            images=data.get('images'),
+            price=data.get('price'),
+            status=data.get('status', 'Available')
+        )
+        print("Post created successfully:", post)
+        
+        response_data = {
+            'success': True,
+            'post': post,
+            'message': 'Post created successfully'
+        }
+        print("Sending response:", response_data)
+        return jsonify(response_data), 201
+    except Exception as e:
+        print(f"Error creating post: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @bp.route('/posts/<post_id>', methods=['GET'])
 def get_post(post_id):
