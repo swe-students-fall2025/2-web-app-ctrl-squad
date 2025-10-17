@@ -7,10 +7,22 @@ bp = Blueprint('posts', __name__)
 @bp.route('/posts', methods=['GET'])
 def get_posts():
     try:
-        print("Attempting to get all posts...")
-        posts = Post.get_all_posts()
-        print(f"Successfully retrieved {len(posts) if posts else 0} posts")
-        return jsonify({"posts": posts}), 200
+        # Parse and validate query params
+        try:
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 20))
+        except ValueError:
+            return jsonify({"error": "page and limit must be integers"}), 400
+
+      # call model
+        posts, total = Post.get_all_posts(page=page, limit=limit)
+
+        return jsonify({
+            "posts": posts,
+            "page": max(1, page),
+            "limit": max(1, min(limit, 100)),
+            "total": total
+        }), 200
     except Exception as e:
         print(f"Error getting posts: {e}")
         return jsonify({"error": str(e)}), 500
@@ -18,20 +30,42 @@ def get_posts():
 @bp.route('/posts', methods=['POST'])
 @login_required
 def create_post():
+    print("Creating new post...")
     data = request.get_json()
+    print("Received data:", data)
     
     if not all(k in data for k in ('title', 'description')):
-        return jsonify({'error': 'Missing required fields'}), 400
+        print("Missing required fields")
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
     
-    post = Post.create_post(
-        user_id=current_user.id,
-        title=data['title'],
-        description=data['description'],
-        images=data.get('images'),
-        price=data.get('price')
-    )
-    
-    return jsonify(post), 201
+    try:
+        print(f"Creating post for user: {current_user.id}")
+        post = Post.create_post(
+            user_id=current_user.id,
+            title=data['title'],
+            description=data['description'],
+            type=data.get('type', 'item'),
+            category=data.get('category'),
+            condition=data.get('condition'),
+            images=data.get('images'),
+            price=data.get('price'),
+            status=data.get('status', 'Available')
+        )
+        print("Post created successfully:", post)
+        
+        response_data = {
+            'success': True,
+            'post': post,
+            'message': 'Post created successfully'
+        }
+        print("Sending response:", response_data)
+        return jsonify(response_data), 201
+    except Exception as e:
+        print(f"Error creating post: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @bp.route('/posts/<post_id>', methods=['GET'])
 def get_post(post_id):

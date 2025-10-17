@@ -81,13 +81,27 @@
                                 <div class="post-header">
                                     <strong>${post.title}</strong> 
                                     <div class="badges">
-                                        ${post.type === 'item' ? `<span class="badge">${post.condition || 'N/A'}</span>` : ''}
-                                        <span class="badge">${post.status || 'Available'}</span>
+                                        ${post.type === 'item' ? `
+                                            <span class="badge">${post.condition || 'N/A'}</span>
+                                            ${post.price ? `<span class="badge price">$${post.price}</span>` : ''}
+                                        ` : ''}
+                                        ${post.category ? `<span class="badge category">${post.category}</span>` : ''}
+                                        <span class="badge status">${post.status || 'Available'}</span>
                                     </div>
                                 </div>
                                 <p class="post-body">${post.description}</p>
+                                ${post.images && post.images.length > 0 ? `
+                                    <div class="post-images">
+                                        <img src="${post.images[0]}" alt="Post image" class="post-image">
+                                        ${post.images.length > 1 ? `<span class="more-images">+${post.images.length - 1} more</span>` : ''}
+                                    </div>
+                                ` : ''}
+                                <div class="post-details">
+                                    <small class="text-muted">Posted: ${new Date(post.created_at).toLocaleDateString()}</small>
+                                </div>
                                 <div class="actions">
                                     <a class="btn secondary" href="singlePost.html?id=${post._id}">View</a>
+                                    <button class="btn" onclick="editPost('${post._id}')">Edit</button>
                                     <button class="btn btn-danger" onclick="deletePost('${post._id}')">Delete</button>
                                 </div>
                             </article>

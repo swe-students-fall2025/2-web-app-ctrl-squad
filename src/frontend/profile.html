@@ -9,7 +9,6 @@
 
   <style>
     .footer-nav .item-link,
-    .footer-nav .item-link:visited,
     .footer-nav .item-link:hover,
     .footer-nav .item-link:focus,
     .footer-nav .item-link:active {
@@ -221,28 +220,111 @@
       <div class="profile-wrap">
 
         <!-- Profile info -->
-        <section class="profile-card">
+        <section class="profile-card" id="profileInfo">
           <div class="avatar" aria-label="profile image placeholder">image</div>
 
           <div class="info">
             <div class="row-compact">
-              <div class="skel-input" aria-label="username">user name</div>
+              <div class="skel-input" aria-label="username">Loading...</div>
               <a class="pill" href="profile_edit.html">edit</a>
             </div>
             <div class="row-compact">
-              <div class="skel-input" aria-label="bio">bio</div>
+              <div class="skel-input" aria-label="bio">Loading...</div>
               <div></div>
             </div>
             <div class="row-compact">
-              <div class="skel-input" aria-label="nyu id">nyu id</div>
+              <div class="skel-input" aria-label="nyu id">Loading...</div>
               <div></div>
             </div>
             <div class="row-compact">
-              <div class="skel-input" aria-label="location">location</div>
+              <div class="skel-input" aria-label="location">Loading...</div>
               <div></div>
             </div>
           </div>
         </section>
+        
+        <script>
+          // Check for authentication
+          function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+              console.log('No token found');
+              return false;
+            }
+            return token;
+          }
+
+          // Load profile information
+          async function loadProfileInfo() {
+            const token = checkAuth();
+            if (!token) {
+              console.log('No auth token, redirecting to login');
+              window.location.href = 'login.html';
+              return;
+            }
+
+            try {
+              const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                credentials: 'include'
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Profile fetch failed:', response.status, errorData);
+                
+                if (response.status === 401) {
+                  // Token expired or invalid
+                  localStorage.removeItem('token');
+                  window.location.href = 'login.html';
+                  return;
+                }
+                
+                throw new Error(errorData.error || 'Failed to fetch profile');
+              }
+
+              const { success, data: profile } = await response.json();
+              console.log('Profile response:', { success, profile });
+              
+              if (!success || !profile) {
+                throw new Error('Invalid profile data received');
+              }
+
+              const info = document.querySelector('#profileInfo .info');
+              
+              info.innerHTML = `
+                <div class="row-compact">
+                  <div class="skel-input" aria-label="username">${profile.username || 'No username set'}</div>
+                  <a class="pill" href="profile_edit.html">edit</a>
+                </div>
+                <div class="row-compact">
+                  <div class="skel-input" aria-label="bio">${profile.bio || 'No bio yet'}</div>
+                  <div></div>
+                </div>
+                <div class="row-compact">
+                  <div class="skel-input" aria-label="nyu id">${profile.nyu_id || 'No NYU ID set'}</div>
+                  <div></div>
+                </div>
+                <div class="row-compact">
+                  <div class="skel-input" aria-label="email">${profile.email || 'No email set'}</div>
+                  <div></div>
+                </div>
+              `;
+
+            } catch (error) {
+              console.error('Error loading profile:', error);
+              document.querySelector('#profileInfo .info').innerHTML = 
+                '<div class="muted">Failed to load profile information. Please try again later.</div>';
+            }
+          }
+
+          // Load profile when page loads
+          document.addEventListener('DOMContentLoaded', loadProfileInfo);
+        </script>
 
         <!-- Manage buttons -->
         <div class="manage-row">
@@ -252,6 +334,10 @@
 
         <!-- posts -->
         <h3 class="section-title">Your Posts</h3>
+        <div id="userPosts">
+          <!-- Posts will be loaded here -->
+          <p class="muted">Loading your posts...</p>
+        </div>
 
         <article class="post">
           <div class="post-head">
@@ -284,6 +370,79 @@
             </div>
           </div>
         </article>
+        <script>
+          // Function to format date
+          function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric' 
+            });
+          }
+
+          // Function to load and display user posts
+          async function loadUserPosts() {
+            try {
+              const response = await fetch('http://127.0.0.1:5000/api/users/profile/posts', {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                },
+                credentials: 'include'
+              });
+              
+              if (!response.ok) throw new Error('Failed to fetch posts');
+              
+              const { posts } = await response.json();
+              const postsContainer = document.getElementById('userPosts');
+              
+              if (posts.length === 0) {
+                postsContainer.innerHTML = '<p class="muted">No posts yet. Create your first post!</p>';
+                return;
+              }
+
+              postsContainer.innerHTML = posts.map(post => `
+                <article class="post">
+                  <div class="post-head">
+                    <div class="skel-input" style="width:180px;">${post.title}</div>
+                    ${post.tradeStatus ? `
+                      <a class="badge ${post.tradeStatus === 'pending' ? 'btn-neutral' : 'btn-great'}" 
+                         href="seller_trade_page.html?postId=${post._id}">
+                        ${post.tradeStatus === 'pending' ? 'Exchange Request Pending' : 'Exchange Request Accepted'}
+                      </a>
+                    ` : ''}
+                  </div>
+                  <div class="post-body">
+                    <div class="media">
+                      ${post.imageUrl ? 
+                        `<img src="${post.imageUrl}" alt="${post.title}" style="width:100%; height:100%; object-fit:cover;">` :
+                        post.description || 'No description available'
+                      }
+                    </div>
+                    <div class="meta">
+                      <div class="skel-chip">${post.favorites?.length || 0} favorites</div>
+                      <div class="skel-chip">Type: ${post.type}</div>
+                      <div class="skel-chip">Posted: ${formatDate(post.createdAt)}</div>
+                      ${post.price ? `<div class="skel-chip">Price: $${post.price}</div>` : ''}
+                      ${post.condition ? `<div class="skel-chip">Condition: ${post.condition}</div>` : ''}
+                    </div>
+                  </div>
+                </article>
+                <div class="spacer"></div>
+              `).join('');
+              
+            } catch (error) {
+              console.error('Error loading posts:', error);
+              document.getElementById('userPosts').innerHTML = 
+                '<p class="muted">Failed to load posts. Please try again later.</p>';
+            }
+          }
+
+          // Load posts when the page loads
+          document.addEventListener('DOMContentLoaded', loadUserPosts);
+        </script>
 
       </div>
     </main>
