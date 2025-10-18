@@ -7,10 +7,22 @@ bp = Blueprint('posts', __name__)
 @bp.route('/posts', methods=['GET'])
 def get_posts():
     try:
-        print("Attempting to get all posts...")
-        posts = Post.get_all_posts()
-        print(f"Successfully retrieved {len(posts) if posts else 0} posts")
-        return jsonify({"posts": posts}), 200
+        # Parse and validate query params
+        try:
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 20))
+        except ValueError:
+            return jsonify({"error": "page and limit must be integers"}), 400
+
+      # call model
+        posts, total = Post.get_all_posts(page=page, limit=limit)
+
+        return jsonify({
+            "posts": posts,
+            "page": max(1, page),
+            "limit": max(1, min(limit, 100)),
+            "total": total
+        }), 200
     except Exception as e:
         print(f"Error getting posts: {e}")
         return jsonify({"error": str(e)}), 500
