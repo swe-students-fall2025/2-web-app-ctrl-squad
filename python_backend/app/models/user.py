@@ -41,6 +41,27 @@ class User(UserMixin):
     
     def check_password(self, password):
         return check_password_hash(self.user_data.get('password'), password)
+
+    @staticmethod
+    def cleanup_sessions():
+        """Clean up all user sessions in the database"""
+        try:
+            # Clear any session data stored in MongoDB
+            db.sessions.delete_many({})
+            # Update all users to clear any stored session/remember tokens
+            db.users.update_many(
+                {},
+                {'$unset': {
+                    'session_token': '',
+                    'remember_token': '',
+                    'reset_token': '',
+                    'reset_token_expiry': ''
+                }}
+            )
+            return True
+        except Exception as e:
+            print(f"Error cleaning up sessions: {e}")
+            return False
     
     @staticmethod
     def create_user(email, username, password, nyu_id=None):
