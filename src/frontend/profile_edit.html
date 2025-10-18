@@ -87,6 +87,53 @@
         
 
         <script>
+            // Load profile data
+            async function loadProfileData() {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        throw new Error('Failed to fetch profile data');
+                    }
+
+                    const { success, data: profile } = await response.json();
+                    if (!success || !profile) {
+                        throw new Error('Invalid profile data received');
+                    }
+
+                    // Fill the form with profile data
+                    document.getElementById('username').value = profile.username || '';
+                    document.getElementById('email').value = profile.email || '';
+                    document.getElementById('nyu_id').value = profile.nyu_id || '';
+                    document.getElementById('bio').value = profile.bio || '';
+
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    alert('Failed to load profile data. Please try again.');
+                }
+            }
+
+            // Load profile data when page loads
+            document.addEventListener('DOMContentLoaded', loadProfileData);
+
             // --- Image upload logic ---
             (function () {
               const dropzone = document.getElementById('dropzone');
@@ -99,11 +146,7 @@
               dropzone.addEventListener('click', openPicker);
               dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
 
-              fileInput.addEventListener('change', () => {
-                const file = fileInput.files && fileInput.files[0];
-                if (!file) return;
-                if (!ACCEPTED.includes(file.type)) { alert('please upload png/jpg/jpeg/webp/gif'); fileInput.value = ''; return; }
-                if (file.size / (1024 * 1024) > MAX_MB) { alert('maximum 5MB'); fileInput.value = ''; return; }
+            function loadPreview(file) {
                 const reader = new FileReader();
                 reader.onload = () => {
                   dropzone.classList.add('preview');

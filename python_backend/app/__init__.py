@@ -13,6 +13,23 @@ load_dotenv()
 # Create Flask app
 app = Flask(__name__)
 
+# Configure session handling
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+# Enable CORS with more specific configuration
+CORS(app, 
+     resources={r"/*": {
+         "origins": ["http://127.0.0.1:5500", "http://localhost:5500"],
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": True,
+         "expose_headers": ["Content-Type", "Authorization"]
+     }},
+     allow_credentials=True)
+
 # Configure app
 app.config.update(
     SECRET_KEY=os.getenv('SECRET_KEY', 'dev-key-please-change'),

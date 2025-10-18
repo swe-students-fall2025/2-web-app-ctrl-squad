@@ -44,19 +44,23 @@ class User(UserMixin):
     
     @staticmethod
     def create_user(email, username, password, nyu_id=None):
-        user_data = {
-            'email': email,
-            'username': username,
-            'password': generate_password_hash(password),
-            'nyu_id': nyu_id,
-            'posts': [],
-            'roommates': [],
-            'trades': [],
-            'is_active': True
-        }
-        result = db.users.insert_one(user_data)
-        user_data['_id'] = result.inserted_id
-        return User(user_data)
+        try:
+            user_data = {
+                'email': email,
+                'username': username,
+                'password': generate_password_hash(password),
+                'nyu_id': nyu_id,
+                'posts': [],
+                'roommates': [],
+                'trades': [],
+                'is_active': True
+            }
+            result = db.users.insert_one(user_data)
+            user_data['_id'] = result.inserted_id
+            return User(user_data)
+        except Exception as e:
+            print(f"Error creating user: {str(e)}")
+            return None
         
     @staticmethod
     def get_by_id(user_id):
