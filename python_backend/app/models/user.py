@@ -65,6 +65,8 @@ class User(UserMixin):
     @staticmethod
     def get_by_id(user_id):
         try:
+            print(f"Attempting to load user with ID: {user_id}")
+            
             if not user_id:
                 print("Warning: Attempted to load user with empty ID")
                 return None
@@ -76,11 +78,14 @@ class User(UserMixin):
                     return None
                 user_id = ObjectId(user_id)
                 
+            print(f"Looking up user with ObjectId: {user_id}")
             user_data = db.users.find_one({'_id': user_id})
+            
             if not user_data:
                 print(f"Warning: No user found with ID {user_id}")
                 return None
-                
+            
+            print(f"Found user data: {user_data.get('username')} (ID: {user_data.get('_id')})")
             return User(user_data)
         except Exception as e:
             print(f"Error in get_by_id: {str(e)}")
