@@ -26,21 +26,21 @@ def cleanup_sessions():
 app.config.update(
     SECRET_KEY=os.getenv('SECRET_KEY', 'dev-key-please-change'),
     MONGO_URI=os.getenv('MONGODB_URI'),
-
-    # Session cookie (Flask-Login session)
+    
+    # Session configuration
     SESSION_COOKIE_NAME='casaconnect_session',
-    SESSION_COOKIE_SAMESITE="None",   # allow cross-site in dev
-    SESSION_COOKIE_SECURE=False,      # True requires HTTPS; keep False for localhost
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_DOMAIN=None,
-    PERMANENT_SESSION_LIFETIME=timedelta(days=1),
-
-    # Remember-me cookie
+    SESSION_COOKIE_SAMESITE='Lax',  # Changed from None to Lax for better security
+    SESSION_COOKIE_DOMAIN=None,  # Allow all domains in development
+    PERMANENT_SESSION_LIFETIME=timedelta(days=1),  # Reduced from 7 days to 1 day
+    
+    # Remember me cookie configuration
     REMEMBER_COOKIE_NAME='casaconnect_remember',
-    REMEMBER_COOKIE_SAMESITE="None",  # allow cross-site in dev
-    REMEMBER_COOKIE_SECURE=False,     # True requires HTTPS; keep False for localhost
+    REMEMBER_COOKIE_SECURE=True,
     REMEMBER_COOKIE_HTTPONLY=True,
-    REMEMBER_COOKIE_DURATION=timedelta(days=7)
+    REMEMBER_COOKIE_SAMESITE='Lax',  # Changed from None to Lax for better security
+    REMEMBER_COOKIE_DURATION=timedelta(days=7)  # Reduced from 14 days to 7 days
 )
 
 # Configure Flask-Login

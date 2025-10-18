@@ -11,9 +11,16 @@ bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
-    
     if request.method == 'OPTIONS':
-        return ('', 204)
+        # Handling preflight request
+        response = jsonify({'status': 'ok'})
+        return response
+
+    if not request.is_json:
+        return jsonify({'error': 'Content-Type must be application/json'}), 415
+
+    data = request.get_json()
+    print("Received registration data:", data)  # Debug print
     
     if not all(k in data for k in ('email', 'username', 'password', 'NetID')):
         return jsonify({'error': 'Missing required fields'}), 400
@@ -21,13 +28,25 @@ def register():
     # Validate NYU email
     if not data['email'].endswith('@nyu.edu'):
         return jsonify({'error': 'Must use an NYU email address'}), 400
-
-    # Validate NYU ID format
-    if not (data['NYU_ID'].startswith('N') and len(data['NYU_ID']) == 8):
-        return jsonify({'error': 'NYU_ID must be in format N12345678'}), 400
-
+    
+    # Check if NetID is not empty
+    if not data['NetID'].strip():
+        return jsonify({'error': 'NetID is required'}), 400
+    
+    # Check if email is already registered
     if User.get_by_email(data['email']):
         return jsonify({'error': 'Email already registered'}), 400
+    
+    # Check if NetID is already registered
+    if User.get_by_nyu_id(data['NetID']):
+        return jsonify({'error': 'NetID already registered'}), 400
+        
+    # Check if username is already taken
+    # Using the db connection from app
+    from app import db
+    existing_user = db.users.find_one({'username': data['username']})
+    if existing_user:
+        return jsonify({'error': 'Username already taken'}), 400
     
     user = User.create_user(
         email=data['email'],
@@ -35,6 +54,9 @@ def register():
         password=data['password'],
         nyu_id=data['NetID']
     )
+    
+    if user is None:
+        return jsonify({'error': 'Failed to create user. Please try again.'}), 400
     
     login_user(user)
     return jsonify({'message': 'Registration successful', 'user': {'id': user.id, 'email': user.email, 'username': user.username}}), 201
@@ -127,7 +149,7 @@ def login():
                 print(f"Failed to login user: {user.id}")
                 return jsonify({'error': 'Failed to log in user'}), 500
             
-            # Set new session data
+            # Set minimal session data
             session['user_id'] = str(user.id)
             session['_fresh'] = True
             session.modified = True
@@ -195,7 +217,6 @@ def login():
     return jsonify({'error': 'Invalid email or password'}), 401
 
 @bp.route('/logout', methods=['POST', 'OPTIONS'])
-@login_required
 def logout():
     if request.method == 'OPTIONS':
         response = jsonify({'status': 'ok'})
