@@ -31,15 +31,16 @@
 
         you will get data from the form using request.form in Flask
         the /register route will handle the form submission:
-        example: /register?NetID=yourNetID&email=user@example.com&username=yourusername&password=yourpassword
+        example: /register?NYU_ID=yourID&email=user@example.com&username=yourusername&password=yourpassword
         then you will query the database to check if the user already exists
         if not, create a new user and store in the database
         if the user already exists, flash an error message and redirect back to register page
       -->
       <form id="register-form" class="login-form" onsubmit="handleRegister(event)">
 
+        <!-- change from net id to student id-->
         <label for="NYU_ID">Student ID:</label>
-        <input type="text" id="NYU_ID" name="NYU_ID" required>
+        <input type="text" id="NYU_ID" name="NYU_ID" pattern="^N[0-9]{8}$" title="Your student ID should have a format like N12345678" required>
 
         <label for="email">Email:</label>
         <input type="email" id="email" name="email" pattern=".+@nyu\.edu$" title="Must be an NYU email address" required>
@@ -62,6 +63,7 @@
       event.preventDefault();
       
       const formData = {
+        //change from net id to nyu student id 
         NYU_ID: document.getElementById('NYU_ID').value,
         email: document.getElementById('email').value,
         username: document.getElementById('username').value,

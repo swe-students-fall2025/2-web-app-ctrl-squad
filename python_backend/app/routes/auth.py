@@ -22,24 +22,24 @@ def register():
     data = request.get_json()
     print("Received registration data:", data)  # Debug print
     
-    if not all(k in data for k in ('email', 'username', 'password', 'NetID')):
+    if not all(k in data for k in ('email', 'username', 'password', 'NYU_ID')):
         return jsonify({'error': 'Missing required fields'}), 400
     
     # Validate NYU email
     if not data['email'].endswith('@nyu.edu'):
         return jsonify({'error': 'Must use an NYU email address'}), 400
     
-    # Check if NetID is not empty
-    if not data['NetID'].strip():
-        return jsonify({'error': 'NetID is required'}), 400
+    # Check if NYU_ID is not empty
+    if not data['NYU_ID'].strip():
+        return jsonify({'error': 'NYU Student ID is required'}), 400
     
     # Check if email is already registered
     if User.get_by_email(data['email']):
         return jsonify({'error': 'Email already registered'}), 400
     
-    # Check if NetID is already registered
-    if User.get_by_nyu_id(data['NetID']):
-        return jsonify({'error': 'NetID already registered'}), 400
+    # Check if NYU_ID is already registered
+    if User.get_by_nyu_id(data['NYU_ID']):
+        return jsonify({'error': 'This NYU Student ID is already registered'}), 400
         
     # Check if username is already taken
     # Using the db connection from app
@@ -52,7 +52,7 @@ def register():
         email=data['email'],
         username=data['username'],
         password=data['password'],
-        nyu_id=data['NetID']
+        nyu_id=data['NYU_ID']
     )
     
     if user is None:
