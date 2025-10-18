@@ -191,37 +191,67 @@
             <button class="btn-post" type="submit">Save changes</button>
         </form>
 
-                    <div class="full">
-                        <label for="bio">Bio</label>
-                        <textarea id="bio" name="bio" rows="3" maxlength="280"
-                            placeholder="Tell others a bit about you (max 280 chars)"></textarea>
-                        <div class="hint" id="bioCount">0 / 280</div>
-                    </div>
-                </div>
+        
 
-                <div class="actions">
-                    <button class="btn-post" type="submit">Save changes</button>
-                    <button class="btn-secondary" type="button"
-                        onclick="window.location.href='profile.html'">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
+        <script>
+            // Load profile data
+            async function loadProfileData() {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'login.html';
+                    return;
+                }
 
-    <script>
-        // --- Image upload  ---
-        (function () {
-            const dropzone = document.getElementById('dropzone');
-            const fileInput = document.getElementById('imageInput');
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
 
-            const MAX_MB = 5;
-            const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        throw new Error('Failed to fetch profile data');
+                    }
 
-            const openPicker = () => fileInput.click();
-            dropzone.addEventListener('click', openPicker);
-            dropzone.addEventListener('keydown', e => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); }
-            });
+                    const { success, data: profile } = await response.json();
+                    if (!success || !profile) {
+                        throw new Error('Invalid profile data received');
+                    }
+
+                    // Fill the form with profile data
+                    document.getElementById('username').value = profile.username || '';
+                    document.getElementById('email').value = profile.email || '';
+                    document.getElementById('nyu_id').value = profile.nyu_id || '';
+                    document.getElementById('bio').value = profile.bio || '';
+
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    alert('Failed to load profile data. Please try again.');
+                }
+            }
+
+            // Load profile data when page loads
+            document.addEventListener('DOMContentLoaded', loadProfileData);
+
+            // --- Image upload logic ---
+            (function () {
+              const dropzone = document.getElementById('dropzone');
+              const fileInput = document.getElementById('imageInput');
+
+              const MAX_MB = 5;
+              const ACCEPTED = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+
+              const openPicker = () => fileInput.click();
+              dropzone.addEventListener('click', openPicker);
+              dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
 
             function loadPreview(file) {
                 const reader = new FileReader();
