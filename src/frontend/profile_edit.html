@@ -356,7 +356,6 @@
                     alert('Failed to load profile data. Please try again later.');
                 }
             });
-        })();
 
             // Handle form submission
             document.getElementById('profileForm').addEventListener('submit', async (e) => {
@@ -409,17 +408,18 @@
                 const fileInput = document.getElementById('imageInput');
                 const file = fileInput.files && fileInput.files[0];
                 if (file) {
-                    updateData.profile_image = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.readAsDataURL(file);
-                    });
+                    try {
+                        updateData.profile_image = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.readAsDataURL(file);
+                        });
+                    } catch (err) {
+                        console.error('Error processing image:', err);
+                        alert('Failed to process the image. Please try again.');
+                        return;
+                    }
                 }
-            } catch (err) {
-                console.error('Error loading profile:', err);
-                alert('Failed to load profile data. Please try again later.');
-            }
-        });
 
                 try {
                     const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
@@ -450,15 +450,11 @@
                     }
                     throw new Error(data.error || 'Failed to update profile');
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Error updating profile:', error);
                     const errorMessage = error.message || 'Failed to update profile. Please try again later.';
                     alert(errorMessage);
                 }
-            } catch (error) {
-                console.error('Update error:', error);
-                alert(error.message || 'Failed to update profile. Please try again later.');
-            }
-        });
+            });
     </script>
 </body>
 
