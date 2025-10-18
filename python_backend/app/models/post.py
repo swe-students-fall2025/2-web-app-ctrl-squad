@@ -41,7 +41,23 @@ class Post:
     def get_by_id(post_id):
         try:
             post = Post.collection.find_one({'_id': ObjectId(post_id)})
-            return json.loads(json.dumps(post, cls=JSONEncoder)) if post else None
+            if not post:
+                return None
+
+            # Get author information
+            if post.get('user_id'):
+                author = db.users.find_one({'_id': post['user_id']})
+                if author:
+                    post['author_name'] = author.get('username', 'Unknown')
+                    post['author_image'] = author.get('profile_image')
+                else:
+                    post['author_name'] = 'User not found'
+                    post['author_image'] = None
+            else:
+                post['author_name'] = 'No author specified'
+                post['author_image'] = None
+
+            return json.loads(json.dumps(post, cls=JSONEncoder))
         except Exception as e:
             print(f"Error getting post by id: {e}")
             raise

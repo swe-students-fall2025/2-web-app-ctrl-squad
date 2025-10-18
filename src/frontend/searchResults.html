@@ -91,81 +91,28 @@
           <div class="main-content">
             <div class="search-section">
 
-              <!-- Search bar
-                //should return /search route with query parameter
-                //example: /search?query=yoursearchterm
-                //how to? You can set up a search route in Flask that handles the search logic
-                //then you will query the database to find items matching the search term
-                //and return the results to the user
-              -->
-  
-              <form class="search-bar" action="searchResults.html" method="get">
-                <input class="search-placeholder" type="text" placeholder="Search...">
-                <button type="submit" class="search-icon-container">
+              <form id="searchForm" class="search-bar" action="searchResults.html" method="GET">
+                <input id="searchInput" name="q" class="search-placeholder" type="text" placeholder="Search...">
+                <button type="submit" class="search-icon-container" style="border: none; background: none; cursor: pointer;">
                   <img class="search-icon" src="../assets/search.svg" alt="search icon">
                 </button>
               </form>
-<!-- 
-              <div class="categories-row">
-                <div class="category-label">Categories</div>
-                <div class="category-label">Free!</div>
-                <div class="category-label">WSQ</div>
-                <div class="category-label">Roommates!</div>
-              </div> -->
             </div>
 
-            <div class="post-section">
+            <div id="searchResults" class="post-section">
               <div class="post-section-title">
-                <h4>Search Results</h1>
-                <div class ="button-container">
-
-                  <!-- Filter and Sort buttons
-                    //not functional yet for sprint 1
-                    how to? You can set up filter and sort functionalities in your Flask backend
-                    For filtering, you can create a route that accepts filter parameters (e.g., category, price range)
-                    and queries the database to return items that match those criteria.
-                    For sorting, you can create a route that accepts a sort parameter (e.g., price ascending/descending, newest first)
-                    and sorts the results accordingly before returning them to the user.  
-                  -->
-
+                <h4>Search Results</h4>
+                <div class="button-container">
                   <button class="filter-button">
                     <img class="filter-icon" src="../assets/filter.svg" alt="filter icon">
                   </button>
                   <button class="sort-button">
                     <img class="sort-icon" src="../assets/sort.svg" alt="sort icon">
                   </button>
-              </div>
-              </div>
-
-              <a href="roommate_post.html">
-                <div class="post-card">
-                  <div class="post-title">post title</div>
-                  <hr class="post-divider">
-                  <div class="post-content-row">
-                    <img class="post-image" src="../assets/icon.png" alt="sampelle image">
-                    <div class="post-meta">
-                      <div class="post-meta-label">username</div>
-                      <div class="post-meta-label">favorites</div>
-                      <div class="post-meta-label">time posted</div>
-                    </div>
-                  </div>
                 </div>
-              </a>
-
-              <a href="exchange_post.html">
-                <div class="post-card">
-                  <div class="post-title">post title</div>
-                  <hr class="post-divider">
-                  <div class="post-content-row">
-                    <img class="post-image" src="../assets/icon.png" alt="sampelle image">
-                    <div class="post-meta">
-                      <div class="post-meta-label">username</div>
-                      <div class="post-meta-label">favorites</div>
-                      <div class="post-meta-label">time posted</div>
-                    </div>
-                  </div>
-                </div>
-              </a>
+              </div>
+              <!-- Search results will be displayed here -->
+            </div>
 
             </div>
           </div>
@@ -173,6 +120,232 @@
           <p>© CTRL Squad, 2025</p>
         </div>
   </div>
+
+  <script>
+    function formatDate(dateString) {
+      if (!dateString) return 'Unknown date';
+      
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Unknown date';
+        
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+          return 'Today';
+        } else if (diffDays === 1) {
+          return 'Yesterday';
+        } else {
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+      } catch (e) {
+        return 'Unknown date';
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function createPostCard(post) {
+      const title = escapeHtml(post.title || 'Untitled Post');
+      // Get the first image from the images array, fall back to image_url, then default image
+      const imageUrl = (post.images && post.images.length > 0) ? post.images[0] : 
+                      (post.image_url || '../assets/icon.png');
+      const authorName = escapeHtml(post.author_name || 'Unknown User');
+      const favoritesCount = parseInt(post.favorites_count) || 0;
+      const dateFormatted = formatDate(post.created_at);
+      
+      // Create an author link if we have an author ID
+      const authorLink = post.author_id ? 
+        `<a href="profile.html?id=${escapeHtml(post.author_id)}" class="post-meta-label author-link">${authorName}</a>` :
+        `<span class="post-meta-label">${authorName}</span>`;
+      
+      return `
+        <a href="singlePage.html?id=${escapeHtml(post._id)}" class="post-card">
+          <div class="post-card">
+            <div class="post-title">${title}</div>
+            <hr class="post-divider">
+            <div class="post-content-row">
+              <img class="post-image" src="${imageUrl}" alt="${title}" onerror="this.src='../assets/icon.png'">
+              <div class="post-meta">
+                ${authorLink}
+                <div class="post-meta-label">${favoritesCount} favorites</div>
+                <div class="post-meta-label">${dateFormatted}</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      `;
+    }
+
+    // Function to get URL parameters
+    function getUrlParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    // Load search results when page loads
+    window.addEventListener('DOMContentLoaded', async () => {
+      const query = getUrlParam('q');
+      
+      if (query) {
+        document.getElementById('searchInput').value = query;
+        const searchResultsDiv = document.getElementById('searchResults');
+        
+        try {
+          const response = await fetch(`http://localhost:5000/api/search/?q=${encodeURIComponent(query)}`, {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Search failed');
+          }
+
+          const data = await response.json();
+          
+          if (!data.success) {
+            throw new Error(data.error || 'Search failed');
+          }
+          
+          if (!Array.isArray(data.results)) {
+            throw new Error('Invalid response format');
+          }
+
+          // Update results count in header
+          const resultsContainer = searchResultsDiv.querySelector('.post-section-title');
+          resultsContainer.innerHTML = `
+            <h4>Search Results (${data.results.length})</h4>
+            <div class="button-container">
+              <button class="filter-button">
+                <img class="filter-icon" src="../assets/filter.svg" alt="filter icon">
+              </button>
+              <button class="sort-button">
+                <img class="sort-icon" src="../assets/sort.svg" alt="sort icon">
+              </button>
+            </div>
+          `;
+
+          // Create a new container for results
+          const resultsArea = document.createElement('div');
+          resultsArea.className = 'search-results-area';
+
+          if (data.results.length === 0) {
+            resultsArea.innerHTML = `
+              <div class="no-results">
+                <p>No results found for "${escapeHtml(query)}"</p>
+                <p>Try different keywords or check your spelling</p>
+              </div>
+            `;
+          } else {
+            const resultsHtml = data.results.map(post => {
+              try {
+                return createPostCard(post);
+              } catch (err) {
+                console.error('Error creating post card:', err);
+                return '';
+              }
+            }).filter(html => html).join('');
+            
+            resultsArea.innerHTML = resultsHtml;
+          }
+
+          // Replace old results with new ones
+          const oldResults = searchResultsDiv.querySelector('.search-results-area');
+          if (oldResults) {
+            oldResults.remove();
+          }
+          searchResultsDiv.appendChild(resultsArea);
+        } catch (error) {
+          console.error('Search error:', error);
+          searchResultsDiv.innerHTML = '<div class="error">Failed to perform search. Please try again.</div>';
+        }
+        } else {
+          console.error('Search error:', error);
+          searchResultsDiv.innerHTML = `
+            <div class="error">
+              <p>Failed to perform search.</p>
+              <p>Please try again later.</p>
+              <p class="error-details">${escapeHtml(error.message)}</p>
+            </div>`;
+        }
+      }
+    );
+
+    // Prevent empty searches
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) {
+        e.preventDefault();
+      }
+    });
+  </script>
+
+  <style>
+    .author-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .author-link:hover {
+      text-decoration: underline;
+    }
+
+    .no-results {
+      padding: 30px;
+      text-align: center;
+      color: #666;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .no-results p {
+      margin: 10px 0;
+    }
+
+    .error {
+      padding: 30px;
+      text-align: center;
+      color: #ff4444;
+      background: #fff5f5;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .error p {
+      margin: 10px 0;
+    }
+
+    .error-details {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 15px;
+    }
+
+    .search-results-area {
+      margin-top: 20px;
+    }
+
+    .search-icon-container {
+      padding: 0;
+      cursor: pointer;
+    }
+  </style>
 </body>
 
 </html>

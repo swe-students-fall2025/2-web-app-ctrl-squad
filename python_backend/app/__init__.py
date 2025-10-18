@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, session
 from flask_cors import CORS
 from flask_login import LoginManager
 from dotenv import load_dotenv
@@ -13,50 +13,65 @@ load_dotenv()
 # Create Flask app
 app = Flask(__name__)
 
-# Configure session handling
-app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-
-# Enable CORS with more specific configuration
-CORS(app, 
-     resources={r"/*": {
-         "origins": ["http://127.0.0.1:5500", "http://localhost:5500"],
-         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         "allow_headers": ["Content-Type", "Authorization"],
-         "supports_credentials": True,
-         "expose_headers": ["Content-Type", "Authorization"]
-     }},
-     allow_credentials=True)
-
-# Configure app
+# Configure app and session handling
 app.config.update(
     SECRET_KEY=os.getenv('SECRET_KEY', 'dev-key-please-change'),
     MONGO_URI=os.getenv('MONGODB_URI'),
+    
+    # Session configuration
     SESSION_COOKIE_NAME='casaconnect_session',
-    SESSION_COOKIE_SAMESITE='None',  # Required for cross-origin requests
-    SESSION_COOKIE_SECURE=True,  # Required when SameSite is None
+    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',  # Changed from None to Lax for better security
     SESSION_COOKIE_DOMAIN=None,  # Allow all domains in development
-    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+    PERMANENT_SESSION_LIFETIME=timedelta(days=1),  # Reduced from 7 days to 1 day
+    
+    # Remember me cookie configuration
     REMEMBER_COOKIE_NAME='casaconnect_remember',
-    REMEMBER_COOKIE_SAMESITE='None',  # Required for cross-origin requests
-    REMEMBER_COOKIE_SECURE=True,  # Required when SameSite is None
+    REMEMBER_COOKIE_SECURE=True,
     REMEMBER_COOKIE_HTTPONLY=True,
-    REMEMBER_COOKIE_DURATION=timedelta(days=14)
+    REMEMBER_COOKIE_SAMESITE='Lax',  # Changed from None to Lax for better security
+    REMEMBER_COOKIE_DURATION=timedelta(days=7)  # Reduced from 14 days to 7 days
 )
 
 # Configure Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.session_protection = None  # Disable session protection for development
+login_manager.session_protection = "strong"  # Enable strong session protection
+login_manager.refresh_view = "auth.login"    # Redirect to login for session refresh
 
 @login_manager.user_loader
 def load_user(user_id):
     from app.models.user import User
-    print(f"Loading user: {user_id}")
-    return User.get_by_id(user_id)
+    if not user_id:
+        print("Attempt to load user with empty ID")
+        return None
+        
+    try:
+        # Check if there's a mismatch between session user and requested user
+        if 'user_id' in session and session['user_id'] != str(user_id):
+            print(f"Session user mismatch: session={session['user_id']}, requested={user_id}")
+            session.clear()
+            return None
+            
+        user = User.get_by_id(user_id)
+        if not user:
+            print(f"No user found for ID: {user_id}")
+            session.clear()
+            return None
+            
+        # Validate session freshness
+        if not session.get('_fresh', False):
+            print(f"Stale session detected for user: {user_id}")
+            session.clear()
+            return None
+            
+        return user
+        
+    except Exception as e:
+        print(f"Error loading user {user_id}: {e}")
+        session.clear()
+        return None
 
 # Configure CORS
 CORS(app, 
@@ -89,12 +104,13 @@ def unauthorized():
     return jsonify({'error': 'Authentication required'}), 401
 
 # Import routes
-from app.routes import auth, posts, roommates, trades, users
+from app.routes import auth, posts, roommates, trades, users, search
 app.register_blueprint(auth.bp)  # Auth routes (using url_prefix from blueprint)
 app.register_blueprint(posts.bp, url_prefix='/api')  # Posts under /api
 app.register_blueprint(roommates.bp, url_prefix='/api')  # Roommates under /api
 app.register_blueprint(trades.bp, url_prefix='/api')  # Trades under /api
 app.register_blueprint(users.bp)  # Users routes (already has url_prefix in blueprint)
+app.register_blueprint(search.bp)  # Search routes (already has url_prefix in blueprint)
 
 from flask import Blueprint, jsonify
 

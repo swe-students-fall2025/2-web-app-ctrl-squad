@@ -60,23 +60,14 @@
 
           <div class="main-content">
             <div class="search-section">
-
-              <!-- Search bar
-                //should return /search route with query parameter- by jm
-                //should return /search route with query parameter
-                //example: /search?query=yoursearchterm
-                //how to? You can set up a search route in Flask that handles the search logic
-                //then you will query the database to find items matching the search term
-                //and return the results to the user
-              -->
-  
-              <form class="search-bar" action="searchResults.html" method="get">
-                <input class="search-placeholder" type="text" placeholder="Search...">
-                <button type="submit" class="search-icon-container">
-                  <img class="search-icon" src="../assets/search.svg" alt="search icon">
-                </button>
+              <form id="searchForm" action="searchResults.html" method="GET">
+                <div class="search-bar">
+                  <input id="searchInput" name="q" class="search-placeholder" type="text" placeholder="Search...">
+                  <button type="submit" class="search-icon-container" style="border: none; background: none; cursor: pointer;">
+                    <img class="search-icon" src="../assets/search.svg" alt="search icon">
+                  </button>
+                </div>
               </form>
-  
 
               <div class="categories-row">
                 <div class="category-label">Categories</div>
@@ -108,6 +99,16 @@
           <p>© CTRL Squad, 2025</p>
         </div>
   </div>
+
+  <script>
+    // Prevent empty searches
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) {
+        e.preventDefault();
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -113,27 +113,51 @@ def login():
         if user.check_password(data['password']):
             print("Password check succeeded")
             
-            # Clear any existing session data first
-            session.clear()
+            print(f"Starting login process for user ID: {user.id}")
             
-            # Mark session as permanent
-            session.permanent = True
-            print(f"Session before login: {session}")
-            
-            # Log out any existing user first
-            logout_user()
-            
-            # Log in the new user
-            success = login_user(user, remember=True, force=True)
-            if not success:
-                return jsonify({'error': 'Failed to log in user'}), 500
+            # Clear any existing session data
+            if current_user.is_authenticated:
+                print(f"Found existing authenticated user: {current_user.id}")
+                logout_user()
                 
-            print(f"Login success: {success}, User ID: {user.id}")
+            session.clear()
+            print("Cleared session")
             
-            # Set new session data
+            # Expire all existing cookies in response
+            response = jsonify({
+                'success': True,
+                'user': {
+                    'id': str(user.id),
+                    'email': user.email,
+                    'username': user.username
+                }
+            })
+            
+            for cookie in request.cookies:
+                response.delete_cookie(cookie)
+            
+            # Set up fresh session
+            session.permanent = True
+            
+            # Log in the new user with fresh session
+            if not login_user(user, remember=True, fresh=True):
+                print(f"Failed to login user: {user.id}")
+                return jsonify({'error': 'Failed to log in user'}), 500
+            
+            # Set minimal session data
             session['user_id'] = str(user.id)
-            session['email'] = user.email
+            session['_fresh'] = True
             session.modified = True
+            
+            print(f"Successfully logged in user: {user.id}")
+            
+            # Verify the logged-in user
+            if current_user.is_authenticated:
+                print(f"Verified logged in user: {current_user.id}")
+            else:
+                print("Warning: User not authenticated after login!")
+                
+            return response
             
             print(f"Session after setting data: {session}")
             
@@ -193,11 +217,44 @@ def logout():
         response = jsonify({'status': 'ok'})
         return response
 
-    logout_user()  # Clear Flask-Login's session
-    session.clear()  # Clear all session data
-    
-    response = jsonify({'message': 'Logged out successfully'})
-    
+    try:
+        # Get user info before logout for logging
+        user_id = current_user.get_id() if current_user.is_authenticated else None
+        print(f"Starting logout for user: {user_id}")
+        
+        # Clear Flask-Login's session
+        logout_user()
+        
+        # Clear all session data
+        session.clear()
+        
+        # Create response
+        response = jsonify({'message': 'Logged out successfully'})
+        
+        # Force expire all cookies
+        for cookie in request.cookies:
+            response.delete_cookie(cookie)
+        
+        # Explicitly expire our known cookies
+        response.set_cookie('casaconnect_session', '', expires=0, secure=True, 
+                          httponly=True, samesite='Lax', domain=None, path='/')
+        response.set_cookie('casaconnect_remember', '', expires=0, secure=True, 
+                          httponly=True, samesite='Lax', domain=None, path='/')
+        response.set_cookie('session', '', expires=0, secure=True,
+                          httponly=True, samesite='Lax', domain=None, path='/')
+        
+        print(f"Successfully logged out user: {user_id}")
+        return response
+        
+    except Exception as e:
+        print(f"Error during logout: {e}")
+        # Even if there's an error, try to clear everything
+        session.clear()
+        response = jsonify({'message': 'Logged out with errors'})
+        response.set_cookie('casaconnect_session', '', expires=0)
+        response.set_cookie('casaconnect_remember', '', expires=0)
+        response.set_cookie('session', '', expires=0)
+        return response
     # Clear the session cookie
     response.delete_cookie('session', 
                          secure=True, 

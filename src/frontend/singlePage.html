@@ -21,28 +21,295 @@
     <div class="phone">
 
           <div class="main-content">
-            <div class="post-section">
-              <div class="post-section-title">Curated for You</div>
-              <a href="singlePage.html">
-                <div class="post-card">
-                  <div class="post-title">post title</div>
-                  <hr class="post-divider">
-                  <div class="post-content-row">
-                    <img class="post-image" src="../assets/icon.png" alt="sampelle image">
-                    <div class="post-meta">
-                      <div class="post-meta-label">username</div>
-                      <div class="post-meta-label">favorites</div>
-                      <div class="post-meta-label">time posted</div>
-                    </div>
-                  </div>
-                </div>
-              </a>
+            <div id="postContainer" class="post-section">
+              <!-- Post details will be loaded here -->
+              <div class="loading">Loading...</div>
             </div>
           </div>
 
           <p>© CTRL Squad, 2025</p>
         </div>
   </div>
+
+  <script>
+    function formatDate(dateString) {
+      if (!dateString) return 'Unknown date';
+      
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Unknown date';
+        
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+          return 'Today';
+        } else if (diffDays === 1) {
+          return 'Yesterday';
+        } else {
+          return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric',
+            year: 'numeric'
+          });
+        }
+      } catch (e) {
+        return 'Unknown date';
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getUrlParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    function smartBack() {
+      const referrer = document.referrer;
+      if (referrer && referrer.includes(window.location.hostname)) {
+        window.history.back();
+      } else {
+        window.location.href = 'home.html';
+      }
+    }
+
+    async function loadPostDetails() {
+      const postId = getUrlParam('id');
+      const postContainer = document.getElementById('postContainer');
+
+      if (!postId) {
+        postContainer.innerHTML = `
+          <div class="error">
+            <p>No post ID provided</p>
+            <button onclick="smartBack()" class="btn-primary">Go Back</button>
+          </div>
+        `;
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load post details');
+        }
+
+        const post = await response.json();
+        
+        if (!post) {
+          throw new Error('Post not found');
+        }
+
+        // Get the primary image URL
+        const imageUrl = (post.images && post.images.length > 0) ? post.images[0] : 
+                        (post.image_url || '../assets/icon.png');
+
+        // Create HTML for additional images if they exist
+        const additionalImagesHtml = post.images && post.images.length > 1 
+          ? `<div class="additional-images">
+              ${post.images.slice(1).map(img => `
+                <img src="${escapeHtml(img)}" alt="Additional image" 
+                     onerror="this.src='../assets/icon.png'" class="additional-image">
+              `).join('')}
+            </div>`
+          : '';
+
+        const authorLink = post.author_id 
+          ? `<a href="profile.html?id=${escapeHtml(post.author_id)}" class="author-link">${escapeHtml(post.author_name || 'Unknown User')}</a>`
+          : escapeHtml(post.author_name || 'Unknown User');
+
+        postContainer.innerHTML = `
+          <div class="post-details">
+            <h1 class="post-title">${escapeHtml(post.title || 'Untitled Post')}</h1>
+            
+            <div class="post-header">
+              <div class="post-meta">
+                <div class="post-author">${authorLink}</div>
+                <div class="post-date">${formatDate(post.created_at)}</div>
+              </div>
+              <div class="post-stats">
+                <span class="favorites-count">
+                  ${post.favorites_count || 0} favorites
+                </span>
+              </div>
+            </div>
+
+            <div class="post-media">
+              <img class="main-image" src="${imageUrl}" alt="${escapeHtml(post.title)}" 
+                   onerror="this.src='../assets/icon.png'">
+              ${additionalImagesHtml}
+            </div>
+
+            <div class="post-description">
+              ${escapeHtml(post.description || 'No description provided.')}
+            </div>
+
+            ${post.type === 'item' ? `
+              <div class="post-actions">
+                <button class="btn-primary" onclick="initiateChat('${escapeHtml(post.author_id)}')">
+                  Message Owner
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error loading post:', error);
+        postContainer.innerHTML = `
+          <div class="error">
+            <p>Failed to load post details</p>
+            <p class="error-details">${escapeHtml(error.message)}</p>
+            <button onclick="smartBack()" class="btn-primary">Go Back</button>
+          </div>
+        `;
+      }
+    }
+
+    function initiateChat(userId) {
+      // TODO: Implement chat initiation
+      console.log('Initiating chat with user:', userId);
+      alert('Chat feature coming soon!');
+    }
+
+    // Load post details when the page loads
+    window.addEventListener('DOMContentLoaded', loadPostDetails);
+  </script>
+
+  <style>
+    .post-details {
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .post-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .post-author {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .post-date {
+      color: var(--text-secondary);
+      font-size: 0.9em;
+    }
+
+    .author-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .author-link:hover {
+      text-decoration: underline;
+    }
+
+    .post-media {
+      margin: 20px 0;
+    }
+
+    .main-image {
+      width: 100%;
+      max-height: 400px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .additional-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .additional-image {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .post-description {
+      margin: 20px 0;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    .post-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-secondary);
+    }
+
+    .error {
+      padding: 30px;
+      text-align: center;
+      color: #ff4444;
+      background: #fff5f5;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .error p {
+      margin: 10px 0;
+    }
+
+    .error-details {
+      font-size: 0.9em;
+      color: #666;
+      margin: 15px 0;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+  </style>
 </body>
 
 </html>
