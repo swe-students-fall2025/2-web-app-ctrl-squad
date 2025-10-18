@@ -1,347 +1,142 @@
-from flask import Blueprint, request, jsonify, session
-from flask_login import login_user, logout_user, login_required, current_user
-import sys
-from pprint import pformat
-from app.models.user import User
-import secrets
-from datetime import datetime, timedelta
+from flask import Flask, jsonify, session
+from flask_cors import CORS
+from flask_login import LoginManager
+from dotenv import load_dotenv
+from datetime import timedelta
+import os
+import pymongo
 from bson.objectid import ObjectId
 
-bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+# Load environment variables
+load_dotenv()
 
-@bp.route('/register', methods=['POST', 'OPTIONS'])
-def register():
-    if request.method == 'OPTIONS':
-        # Handling preflight request
-        response = jsonify({'status': 'ok'})
-        return response
+# Create Flask app
+app = Flask(__name__)
 
-    if not request.is_json:
-        return jsonify({'error': 'Content-Type must be application/json'}), 415
-
-    data = request.get_json()
-    print("Received registration data:", data)  # Debug print
-    
-    if not all(k in data for k in ('email', 'username', 'password', 'NYU_ID')):
-        return jsonify({'error': 'Missing required fields'}), 400
-    
-    # Validate NYU email
-    if not data['email'].endswith('@nyu.edu'):
-        return jsonify({'error': 'Must use an NYU email address'}), 400
-    
-    # Check if NYU_ID is not empty
-    if not data['NYU_ID'].strip():
-        return jsonify({'error': 'NYU Student ID is required'}), 400
-    
-    # Check if email is already registered
-    if User.get_by_email(data['email']):
-        return jsonify({'error': 'Email already registered'}), 400
-    
-    # Check if NYU_ID is already registered
-    if User.get_by_nyu_id(data['NYU_ID']):
-        return jsonify({'error': 'This NYU Student ID is already registered'}), 400
-        
-    # Check if username is already taken
-    # Using the db connection from app
-    from app import db
-    existing_user = db.users.find_one({'username': data['username']})
-    if existing_user:
-        return jsonify({'error': 'Username already taken'}), 400
-    
-    user = User.create_user(
-        email=data['email'],
-        username=data['username'],
-        password=data['password'],
-        nyu_id=data['NYU_ID']
-    )
-    
-    if user is None:
-        return jsonify({'error': 'Failed to create user. Please try again.'}), 400
-    
-    login_user(user)
-    return jsonify({'message': 'Registration successful', 'user': {'id': user.id, 'email': user.email, 'username': user.username}}), 201
-
-@bp.route('/login', methods=['GET', 'POST', 'OPTIONS'])
-def login():
-    # Handle preflight OPTIONS request
-    if request.method == 'OPTIONS':
-        response = jsonify({'status': 'ok'})
-        return response
-        
-    # Clear any existing session data
-    logout_user()
-    session.clear()
-
+# Clean up any existing sessions in the database on server start
+def cleanup_sessions():
     try:
-        # Check if user is already authenticated
-        if current_user.is_authenticated:
-            print(f"User already authenticated: {current_user.id}")
-            response = jsonify({
-                'success': True,
-                'message': 'Already logged in',
-                'user': {
-                    'id': current_user.id,
-                    'email': current_user.email,
-                    'username': current_user.username
-                }
-            })
-            response.headers.update({
-                'Access-Control-Allow-Credentials': 'true',
-                'Access-Control-Allow-Origin': request.headers.get('Origin'),
-                'Access-Control-Expose-Headers': 'Set-Cookie'
-            })
-            return response
+        from app.models.user import User
+        User.cleanup_sessions()  # This is a new method we'll add
+        print("Successfully cleaned up all sessions on server start")
     except Exception as e:
-        print(f"Error checking authentication: {e}")
-        return jsonify({'success': False, 'error': 'Authentication error'}), 500
+        print(f"Error cleaning up sessions: {e}")
 
-    if request.method == 'OPTIONS':
-        return '', 200
+# Configure app and session handling
+app.config.update(
+    SECRET_KEY=os.getenv('SECRET_KEY', 'dev-key-please-change'),
+    MONGO_URI=os.getenv('MONGODB_URI'),
+    
+    # Session configuration
+    SESSION_COOKIE_NAME='casaconnect_session',
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',  # Changed from None to Lax for better security
+    SESSION_COOKIE_DOMAIN=None,  # Allow all domains in development
+    PERMANENT_SESSION_LIFETIME=timedelta(days=1),  # Reduced from 7 days to 1 day
+    
+    # Remember me cookie configuration
+    REMEMBER_COOKIE_NAME='casaconnect_remember',
+    REMEMBER_COOKIE_SECURE=True,
+    REMEMBER_COOKIE_HTTPONLY=True,
+    REMEMBER_COOKIE_SAMESITE='Lax',  # Changed from None to Lax for better security
+    REMEMBER_COOKIE_DURATION=timedelta(days=7)  # Reduced from 14 days to 7 days
+)
+
+# Configure Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.session_protection = "strong"  # Enable strong session protection
+login_manager.refresh_view = "auth.login"    # Redirect to login for session refresh
+
+@login_manager.user_loader
+def load_user(user_id):
+    from app.models.user import User
+    if not user_id:
+        print("Attempt to load user with empty ID")
+        return None
         
-    if request.method == 'GET':
-        # Return a JSON response for GET requests to /login
-        return jsonify({'error': 'Please login'}), 401
-        
-    data = request.get_json()
-    print("Received login data:", data)  # Debug print
-    
-    if not all(k in data for k in ('email', 'password')):
-        print("Missing required fields")  # Debug print
-        return jsonify({'error': 'Missing required fields'}), 400
-    
-    user = User.get_by_email(data['email'])
-    print("Found user:", user.user_data if user else None)  # Debug print
-    
-    if user:
-        print("Stored password hash:", user.user_data.get('password'))
-        print("Checking password:", data['password'])
-        if user.check_password(data['password']):
-            print("Password check succeeded")
-            
-            print(f"Starting login process for user ID: {user.id}")
-            
-            # Clear any existing session data
-            if current_user.is_authenticated:
-                print(f"Found existing authenticated user: {current_user.id}")
-                logout_user()
-                
+    try:
+        # Check if there's a mismatch between session user and requested user
+        if 'user_id' in session and session['user_id'] != str(user_id):
+            print(f"Session user mismatch: session={session['user_id']}, requested={user_id}")
             session.clear()
-            print("Cleared session")
+            return None
             
-            # Expire all existing cookies in response
-            response = jsonify({
-                'success': True,
-                'user': {
-                    'id': str(user.id),
-                    'email': user.email,
-                    'username': user.username
-                }
-            })
+        user = User.get_by_id(user_id)
+        if not user:
+            print(f"No user found for ID: {user_id}")
+            session.clear()
+            return None
             
-            for cookie in request.cookies:
-                response.delete_cookie(cookie)
+        # Validate session freshness
+        if not session.get('_fresh', False):
+            print(f"Stale session detected for user: {user_id}")
+            session.clear()
+            return None
             
-            # Set up fresh session
-            session.permanent = True
-            
-            # Log in the new user with fresh session
-            if not login_user(user, remember=True, fresh=True):
-                print(f"Failed to login user: {user.id}")
-                return jsonify({'error': 'Failed to log in user'}), 500
-            
-            # Set minimal session data
-            session['user_id'] = str(user.id)
-            session['_fresh'] = True
-            session.modified = True
-            
-            print(f"Successfully logged in user: {user.id}")
-            
-            # Verify the logged-in user
-            if current_user.is_authenticated:
-                print(f"Verified logged in user: {current_user.id}")
-            else:
-                print("Warning: User not authenticated after login!")
-                
-            return response
-            
-            print(f"Session after setting data: {session}")
-            
-            # Create response with user data
-            response = jsonify({
-                'success': True,
-                'user': {
-                    'id': str(user.id),
-                    'email': user.email,
-                    'username': user.username
-                }
-            })
-            
-            # Add required CORS and cookie headers
-            origin = request.headers.get('Origin')
-            response.headers.update({
-                'Access-Control-Allow-Origin': origin,
-                'Access-Control-Allow-Credentials': 'true',
-                'Access-Control-Expose-Headers': 'Set-Cookie, Authorization',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                'Content-Type': 'application/json'
-            })
-            
-            # Add secure cookie settings
-            response.set_cookie(
-                'session',
-                session.get('_id'),
-                secure=True,
-                httponly=True,
-                samesite='None',
-                max_age=7 * 24 * 3600  # 7 days
-            )
-            
-            print(f"Current user after login: {current_user.id if current_user.is_authenticated else 'Not authenticated'}")
-            print(f"Final session state: {session}")
-            print(f"Response headers: {dict(response.headers)}")
-            
-            # Test if the user loader works
-            from app import login_manager
-            test_user = login_manager.user_callback(user.id)
-            print(f"Test user load: {test_user.id if test_user else 'None'}")
-            
-            return response
-        else:
-            print("Password check failed")
-    
-    if not user:
-        print("User not found")  # Debug print
-        return jsonify({'error': 'Invalid email or password'}), 401
-    
-    print("Password incorrect")  # Debug print
-    return jsonify({'error': 'Invalid email or password'}), 401
-
-@bp.route('/logout', methods=['POST', 'OPTIONS'])
-def logout():
-    if request.method == 'OPTIONS':
-        response = jsonify({'status': 'ok'})
-        return response
-
-    try:
-        # Get user info before logout for logging
-        user_id = current_user.get_id() if current_user.is_authenticated else None
-        print(f"Starting logout for user: {user_id}")
-        
-        # If we have a logged-in user, update their record
-        if user_id:
-            from app import db
-            db.users.update_one(
-                {'_id': ObjectId(user_id)},
-                {'$unset': {
-                    'session_token': '',
-                    'remember_token': '',
-                }}
-            )
-        
-        # Clear Flask-Login's session
-        logout_user()
-        
-        # Clear all session data
-        session.clear()
-        
-        # Create response
-        response = jsonify({'message': 'Logged out successfully'})
-        
-        # Force expire all cookies
-        for cookie in request.cookies:
-            response.delete_cookie(cookie, path='/', domain=None)
-        
-        # Explicitly expire our known cookies with all variations
-        cookie_names = ['casaconnect_session', 'casaconnect_remember', 'session', 'remember_token']
-        paths = ['/', '/api', '/api/auth']
-        
-        for cookie_name in cookie_names:
-            for path in paths:
-                response.delete_cookie(cookie_name, path=path, domain=None)
-                response.set_cookie(cookie_name, '', expires=0, secure=True,
-                                 httponly=True, samesite='Lax', domain=None, path=path)
-        
-        print(f"Successfully logged out user: {user_id}")
-        return response
+        return user
         
     except Exception as e:
-        print(f"Error during logout: {e}")
-        # Even if there's an error, try to clear everything
+        print(f"Error loading user {user_id}: {e}")
         session.clear()
-        response = jsonify({'message': 'Logged out with errors'})
-        response.set_cookie('casaconnect_session', '', expires=0)
-        response.set_cookie('casaconnect_remember', '', expires=0)
-        response.set_cookie('session', '', expires=0)
-        return response
-    # Clear the session cookie
-    response.delete_cookie('session', 
-                         secure=True, 
-                         httponly=True, 
-                         samesite='None',
-                         domain=None,
-                         path='/')
-    
-    # Add CORS headers
-    origin = request.headers.get('Origin')
-    response.headers.update({
-        'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-    })
-    
-    return response
+        return None
 
-@bp.route('/reset-password', methods=['POST'])
-def request_password_reset():
-    data = request.get_json()
-    if 'email' not in data:
-        return jsonify({'error': 'Email is required'}), 400
-        
-    user = User.get_by_email(data['email'])
-    if not user:
-        # Don't reveal that the user doesn't exist
-        return jsonify({'message': 'If your email is registered, you will receive a password reset link'}), 200
-        
-    # Generate reset token
-    token = secrets.token_urlsafe(32)
-    expiry = datetime.utcnow() + timedelta(hours=1)
-    user.set_reset_token(token, expiry)
+# Configure CORS
+CORS(app, 
+     resources={r"/*": {
+         "origins": ["http://127.0.0.1:5500", "http://localhost:5500"],
+         "allow_credentials": True,
+         "expose_headers": ["Set-Cookie", "Authorization"],
+         "allow_headers": ["Content-Type", "Authorization", "Cookie", "Accept"],
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         "max_age": 3600
+     }},
+     supports_credentials=True)
+
+# Set up MongoDB connection
+try:
+    client = pymongo.MongoClient(os.getenv('MONGODB_URI'))
+    client.server_info()  # Test connection
+    db = client.get_default_database()
+    print("Successfully connected to MongoDB")
     
-    # TODO: Send reset email
-    # For now, just return the token
-    return jsonify({
-        'message': 'Password reset link sent',
-        'token': token  # Remove this in production
-    }), 200
+    # Clean up sessions when server starts
+    cleanup_sessions()
+except Exception as e:
+    print(f"Error connecting to MongoDB: {e}")
+    db = None
 
-@bp.route('/reset-password/<token>', methods=['GET'])
-def verify_reset_token(token):
-    user = User.get_by_reset_token(token)
-    if not user:
-        return jsonify({'error': 'Invalid or expired reset token'}), 400
-    return jsonify({'message': 'Valid reset token'}), 200
+# Enable debug mode
+app.debug = True
 
-@bp.route('/reset-password/<token>', methods=['PUT'])
-def reset_password(token):
-    data = request.get_json()
-    if 'password' not in data:
-        return jsonify({'error': 'New password is required'}), 400
-        
-    user = User.get_by_reset_token(token)
-    if not user:
-        return jsonify({'error': 'Invalid or expired reset token'}), 400
-        
-    user.set_password(data['password'])
-    user.clear_reset_token()
-    
-    return jsonify({'message': 'Password reset successful'}), 200
+# Custom unauthorized handler for API requests
+@login_manager.unauthorized_handler
+def unauthorized():
+    return jsonify({'error': 'Authentication required'}), 401
 
-@bp.route('/profile', methods=['GET'])
-@login_required
-def get_profile():
-    return jsonify({
-        'id': current_user.id,
-        'email': current_user.email,
-        'username': current_user.username
-    })
+# Import routes
+from app.routes import auth, posts, roommates, trades, users, search
+app.register_blueprint(auth.bp)  # Auth routes (using url_prefix from blueprint)
+app.register_blueprint(posts.bp, url_prefix='/api')  # Posts under /api
+app.register_blueprint(roommates.bp, url_prefix='/api')  # Roommates under /api
+app.register_blueprint(trades.bp, url_prefix='/api')  # Trades under /api
+app.register_blueprint(users.bp)  # Users routes (already has url_prefix in blueprint)
+app.register_blueprint(search.bp)  # Search routes (already has url_prefix in blueprint)
+
+from flask import Blueprint, jsonify
+
+base = Blueprint("base", __name__)
+
+@base.get("/")
+def root():
+    return "Backend running", 200
+
+@base.get("/health")
+def health():
+    return jsonify(ok=True), 200
+
+app.register_blueprint(base)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=os.getenv('PORT', 5000))
