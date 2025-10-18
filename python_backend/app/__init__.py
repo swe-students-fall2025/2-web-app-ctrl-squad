@@ -13,6 +13,15 @@ load_dotenv()
 # Create Flask app
 app = Flask(__name__)
 
+# Clean up any existing sessions in the database on server start
+def cleanup_sessions():
+    try:
+        from app.models.user import User
+        User.cleanup_sessions()  # This is a new method we'll add
+        print("Successfully cleaned up all sessions on server start")
+    except Exception as e:
+        print(f"Error cleaning up sessions: {e}")
+
 # Configure app and session handling
 app.config.update(
     SECRET_KEY=os.getenv('SECRET_KEY', 'dev-key-please-change'),
@@ -75,7 +84,7 @@ def load_user(user_id):
 
 # Configure CORS
 CORS(app, 
-     resources={r"/api/*": {
+     resources={r"/*": {
          "origins": ["http://127.0.0.1:5500", "http://localhost:5500"],
          "allow_credentials": True,
          "expose_headers": ["Set-Cookie", "Authorization"],
@@ -91,6 +100,9 @@ try:
     client.server_info()  # Test connection
     db = client.get_default_database()
     print("Successfully connected to MongoDB")
+    
+    # Clean up sessions when server starts
+    cleanup_sessions()
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
     db = None

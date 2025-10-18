@@ -5,6 +5,7 @@ from pprint import pformat
 from app.models.user import User
 import secrets
 from datetime import datetime, timedelta
+from bson.objectid import ObjectId
 
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -66,6 +67,10 @@ def login():
     if request.method == 'OPTIONS':
         response = jsonify({'status': 'ok'})
         return response
+        
+    # Clear any existing session data
+    logout_user()
+    session.clear()
 
     try:
         # Check if user is already authenticated
@@ -222,6 +227,17 @@ def logout():
         user_id = current_user.get_id() if current_user.is_authenticated else None
         print(f"Starting logout for user: {user_id}")
         
+        # If we have a logged-in user, update their record
+        if user_id:
+            from app import db
+            db.users.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$unset': {
+                    'session_token': '',
+                    'remember_token': '',
+                }}
+            )
+        
         # Clear Flask-Login's session
         logout_user()
         
@@ -233,15 +249,17 @@ def logout():
         
         # Force expire all cookies
         for cookie in request.cookies:
-            response.delete_cookie(cookie)
+            response.delete_cookie(cookie, path='/', domain=None)
         
-        # Explicitly expire our known cookies
-        response.set_cookie('casaconnect_session', '', expires=0, secure=True, 
-                          httponly=True, samesite='Lax', domain=None, path='/')
-        response.set_cookie('casaconnect_remember', '', expires=0, secure=True, 
-                          httponly=True, samesite='Lax', domain=None, path='/')
-        response.set_cookie('session', '', expires=0, secure=True,
-                          httponly=True, samesite='Lax', domain=None, path='/')
+        # Explicitly expire our known cookies with all variations
+        cookie_names = ['casaconnect_session', 'casaconnect_remember', 'session', 'remember_token']
+        paths = ['/', '/api', '/api/auth']
+        
+        for cookie_name in cookie_names:
+            for path in paths:
+                response.delete_cookie(cookie_name, path=path, domain=None)
+                response.set_cookie(cookie_name, '', expires=0, secure=True,
+                                 httponly=True, samesite='Lax', domain=None, path=path)
         
         print(f"Successfully logged out user: {user_id}")
         return response
