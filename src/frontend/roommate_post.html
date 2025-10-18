@@ -18,28 +18,55 @@
         }
 
         .wrap {
-            width: 100%;
+
             display: flex;
             flex-direction: column;
             gap: 24px;
+            
         }
 
-        .card { 
-            padding: 8px 0; 
-        }
+        .card {
+            background: var(--panel, #fff);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.06);
+            }
         
+        .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #e9e9e9;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        }
+
         .img-holder { 
-            width: 100%; 
-            background: #ddd; 
-            border-radius: 16px; 
-            overflow: hidden; 
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #ddd;
+            margin-bottom: 12px 
         }
 
         .img-holder img { 
-            width: 100%; 
-            height: 220px; 
-            object-fit: cover; 
-            display: block; 
+            width: 100%;
+            aspect-ratio: 16 / 9;     
+            object-fit: cover;
+            display: block;
+        }
+
+
+        /* when there is no image */
+        .card.no-image .img-holder { 
+            background:#efefef; 
+            height: 140px; 
+        }
+
+        .card.no-image .title { 
+            margin-top: 4px; 
         }
 
         .skel-row {
@@ -53,10 +80,24 @@
             grid-template-columns: 1fr auto;
             align-items: center;
             gap: 8px;
+
         }
 
 
-        .info-line {
+        .info-line, .title, .desc { margin-bottom: 10px; }
+
+        .title { 
+            font-size: 1.15rem; 
+            font-weight: 800; 
+        }
+
+        .desc { 
+            background: #eee; 
+            border-radius: 14px; 
+            padding: 14px; 
+        }
+
+        .info-line{
             background: #e6e6e6;
             border-radius: 8px;
             padding: 6px 10px;
@@ -101,13 +142,14 @@
         .meta-small {
             font-size: 12px;
             color: #666;
-            margin-top: 4px;
+            margin-top: px;
+            margin-bottom: 12px;
         }
 
         .actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 14px;
+            gap: 16px;
             margin-top: 6px;
         }
 
@@ -132,6 +174,8 @@
             font-weight: 800;
         }
 
+
+
         @media (max-width: 360px) {
             .img-skel {
                 height: 320px;
@@ -152,38 +196,35 @@
             <div class="after-topbar">
                 <div class="wrap">
 
-                    <!-- username | year -->
-                    <div class="skel-row">
-                        <span>username</span>
-                        <span>year</span>
+                    <div id="posts"></div>
+
+                <template id="postTpl">
+                <article class="card">
+                    <div class="card-head">
+                    <span class="u-name">username</span>
+                    <span class="u-year">year</span>
                     </div>
 
-                    <!-- image -->
-                    <div class="img-skel">Image</div>
+                    <div class="img-holder">
+                    <img class="u-img" alt="roommate image"/>
+                    </div>
 
-                    <!-- place to live -->
-                    <div class="info-line">&lt;place to live&gt;</div>
-
-                    <!-- title -->
-                    <div class="block title">Post title</div>
-
-                    <!-- description -->
-                    <div class="block desc">Description……</div>
-
-                    <!-- meta -->
-                    <div class="meta-small">Last edited &lt;time&gt; &lt;IP&gt;</div>
-
+                    <div class="info-line t-loc">&lt;place to live&gt;</div>
+                    <div class="block title t-title">Post title</div>
+                    <div class="block desc t-desc">Description…</div>
+                    <div class="meta-small t-meta">Last edited —</div>
 
                     <div class="actions">
-                        <!-- favorites -->
-                        <button class="btn-action" id="favBtn" type="button">
-                            <span>favorites</span>
-                            <span class="like-badge" id="likeCount">(0)</span>
-                        </button>
-
-                        <!-- match link to match confirm page -->
-                        <a class="btn-action" href="match_confirm.html">match</a>
+                    <button class="btn-action favBtn" type="button">
+                        <span>favorites</span>
+                        <span class="like-badge likeCount">(0)</span>
+                    </button>
+                    <a class="btn-action matchBtn" href="match_confirm.html">match</a>
                     </div>
+                </article>
+                </template>
+
+                    
                 </div>
             </div>
         </main>
@@ -214,58 +255,84 @@
     </script>
 
     <!-- fetch roommate posts -->
-    <script>
-    const API_BASE = "http://127.0.0.1:5000"; // Flask server
-    const API_LIST = `${API_BASE}/api/roommates`;
+        <script>
+        const API_BASE = "http://127.0.0.1:5000"; // Flask server
+        const API_LIST = `${API_BASE}/api/roommates`;
 
-    const esc = s => String(s||"").replace(/[&<>"']/g, c => (
-      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
-    ));
+        const esc = s => String(s||"").replace(/[&<>"']/g, c =>
+        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+        );
 
-    async function loadPosts(){
-      try {
-        const r = await fetch(API_LIST);
-        const data = await r.json();
-        if(!data.success) throw new Error("API error");
+        async function loadPosts() {
+        try {
+            const r = await fetch(API_LIST);
+            const data = await r.json();
+            if (!data.success) throw new Error("API error");
 
-        const wrap = document.querySelector(".wrap");
-        if (!data.roommates || data.roommates.length === 0) {
-          wrap.innerHTML += "<p>No roommate posts yet.</p>";
-          return;
+            const root = document.getElementById("posts");   
+            root.innerHTML = "";                              
+
+            if (!data.roommates || data.roommates.length === 0) {
+            root.innerHTML = "<p>No roommate posts yet.</p>";
+            return;
+            }
+
+            const tpl = document.getElementById("postTpl");
+
+            data.roommates.forEach(p => {
+            const frag = tpl.content.cloneNode(true);
+              const card = frag.querySelector(".card");
+
+
+            // username / year
+            frag.querySelector(".u-name").textContent = p.username || "username";
+            frag.querySelector(".u-year").textContent = p.year || "year";
+
+            // image
+            const imgHolder = frag.querySelector(".img-holder");
+            const imgEl = frag.querySelector(".u-img");
+            const firstImg = Array.isArray(p.images) && p.images[0] ? String(p.images[0]).trim() : "";
+            if (firstImg) {
+                imgEl.src = firstImg;
+                imgEl.alt = p.title || "roommate image";
+                card.classList.add("has-image");
+            } else {
+                card.classList.add("no-image");
+            }
+
+            // location / title / description
+            frag.querySelector(".t-loc").innerHTML   = `&lt;${(p.location || "place to live")}&gt;`;
+            frag.querySelector(".t-title").textContent = p.title || "Post title";
+            frag.querySelector(".t-desc").textContent  = p.description || "Description…";
+
+            // meta
+            const when = p.updated_at || p.created_at;
+            frag.querySelector(".t-meta").textContent =
+                `Last edited ${when ? new Date(when).toLocaleString() : "—"}`;
+
+            // favorites demo (client-side only)
+            const likeBadge = frag.querySelector(".likeCount");
+            let count = Number(p.favorites || 0);
+            likeBadge.textContent = `(${count})`;
+            frag.querySelector(".favBtn").addEventListener("click", () => {
+                count += 1;
+                likeBadge.textContent = `(${count})`;
+            });
+
+            // match link carries the id
+            frag.querySelector(".matchBtn").href = `match_confirm.html?post=${encodeURIComponent(p.id || "")}`;
+
+            root.appendChild(frag);
+            });
+        } catch (e) {
+            console.error(e);
+            alert("Failed to load posts. Check Flask/CORS.");
+        }
         }
 
-        data.roommates.forEach(p => {
-          const postHTML = `
-            <div class="skel-row">
-              <span>${esc(p.username || "username")}</span>
-              <span>${esc(p.year || "year")}</span>
-            </div>
-            <div class="img-skel">Image</div>
-            <div class="info-line">&lt;${esc(p.location || "place to live")}&gt;</div>
-            <div class="block title">${esc(p.title)}</div>
-            <div class="block desc">${esc(p.description)}</div>
-            <div class="meta-small">Last edited ${p.updated_at || p.created_at || "—"}</div>
-            <div class="actions">
-              <button class="btn-action"><span>favorites</span><span class="like-badge">(0)</span></button>
-              <a class="btn-action" href="match_confirm.html">match</a>
-            </div>
-          `;
-          const div = document.createElement("div");
-          div.className = "post";
-          div.innerHTML = postHTML;
-          wrap.appendChild(div);
-        });
-      } catch (e) {
-        console.error(e);
-        alert("Failed to load posts. Check Flask/CORS.");
-      }
-    }
+        window.addEventListener("load", loadPosts);
+        </script>
 
-    window.addEventListener("load", loadPosts);
-    </script>
-
-
-
-</body>
+    </body>
 
 </html>
