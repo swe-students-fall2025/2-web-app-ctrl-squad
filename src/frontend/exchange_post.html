@@ -211,11 +211,11 @@
 
       <div class="after-topbar">
         <div class="wrap">
-          <div class="skel-line">username</div>
-          <div class="img-skel">Image</div>
-          <div class="block title">Post title</div>
-          <div class="block desc">Description……</div>
-          <div class="meta-small">Last edited &lt;time&gt; &lt;IP&gt;</div>
+          <div class="skel-line" id="username">Loading...</div>
+          <div class="img-skel" id="postImage">Loading...</div>
+          <div class="block title" id="postTitle">Loading...</div>
+          <div class="block desc" id="postDescription">Loading...</div>
+          <div class="meta-small" id="postMeta">Loading...</div>
 
           <div class="actions">
             <!-- favorites -->
@@ -226,10 +226,8 @@
             <!-- exchange opens popup -->
             <button class="btn-action" id="exchangeBtn" type="button">exchange</button>
 
-            <!-- if user already sent exchange request, show status 
-
-            <button class="btn-status" type="button">exchanged</button>
-            -->
+            <!-- if user already sent exchange request, show status -->
+            <button class="btn-status" id="exchangeStatus" type="button" style="display: none">exchanged</button>
             
           </div>
         </div>
@@ -255,6 +253,63 @@
   </div>
 
   <script>
+    // Get post ID from URL parameters and load post details
+    function getPostId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('id');
+    }
+
+    async function loadPostDetails() {
+      const postId = getPostId();
+      if (!postId) {
+        console.error('No post ID provided');
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+          credentials: 'include' // This is needed to include cookies
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch post details');
+        }
+
+        const post = await response.json();
+        
+        // Update UI elements with post data
+        document.getElementById('username').textContent = post.author_name || 'Unknown User';
+        document.getElementById('postTitle').textContent = post.title || 'No Title';
+        document.getElementById('postDescription').textContent = post.description || 'No Description';
+        document.getElementById('postMeta').textContent = `Last edited ${new Date(post.updated_at || post.created_at).toLocaleString()}`;
+
+        // Update image if available
+        const imageElement = document.getElementById('postImage');
+        if (post.images && post.images.length > 0) {
+          imageElement.style.backgroundImage = `url(${post.images[0]})`;
+          imageElement.style.backgroundSize = 'cover';
+          imageElement.style.backgroundPosition = 'center';
+          imageElement.textContent = '';
+        } else {
+          imageElement.textContent = 'No Image Available';
+        }
+
+        // Update favorite count
+        document.getElementById('likeCount').textContent = `(${post.favorites || 0})`;
+
+        // Check if user has already sent exchange request
+        if (post.exchangeStatus === 'requested') {
+          document.getElementById('exchangeBtn').style.display = 'none';
+          document.getElementById('exchangeStatus').style.display = 'inline-flex';
+        }
+      } catch (error) {
+        console.error('Error loading post details:', error);
+        alert('Failed to load post details. Please try again later.');
+      }
+    }
+
+    // Load post details when page loads
+    window.addEventListener('load', loadPostDetails);
+
     // Smart back
     function smartBack() {
       if (document.referrer && document.referrer !== location.href) {
