@@ -259,11 +259,17 @@
                 const fileInput = document.getElementById('imageInput');
                 const file = fileInput.files && fileInput.files[0];
                 if (file) {
-                    updateData.profile_image = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.readAsDataURL(file);
-                    });
+                    try {
+                        updateData.profile_image = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.readAsDataURL(file);
+                        });
+                    } catch (err) {
+                        console.error('Error processing image:', err);
+                        alert('Failed to process the image. Please try again.');
+                        return;
+                    }
                 }
 
                 try {
@@ -285,8 +291,10 @@
                         window.location.href = 'profile.html';
                     }
                 } catch (error) {
-                    console.error('Error:', error);
-                    alert(error.message || 'Failed to update profile. Please try again later.');
+                    console.error('Error updating profile:', error);
+                    const errorMessage = error.message || 'Failed to update profile. Please try again later.';
+                    alert(errorMessage);
                 }
             });
-        </script>
+    </script>
+</body>

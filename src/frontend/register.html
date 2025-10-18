@@ -38,8 +38,8 @@
       -->
       <form id="register-form" class="login-form" onsubmit="handleRegister(event)">
 
-        <label for="NetID">Net ID:</label>
-        <input type="text" id="NetID" name="NetID" required>
+        <label for="NYU_ID">Student ID:</label>
+        <input type="text" id="NYU_ID" name="NYU_ID" required>
 
         <label for="email">Email:</label>
         <input type="email" id="email" name="email" pattern=".+@nyu\.edu$" title="Must be an NYU email address" required>
@@ -62,14 +62,14 @@
       event.preventDefault();
       
       const formData = {
-        NetID: document.getElementById('NetID').value,
+        NYU_ID: document.getElementById('NYU_ID').value,
         email: document.getElementById('email').value,
         username: document.getElementById('username').value,
         password: document.getElementById('password').value
       };
 
       try {
-        const response = await fetch('http://localhost:5000/api/auth/register', {
+        const response = await fetch('http://127.0.0.1:5000/api/auth/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -10,8 +10,9 @@ bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
-    data = request.get_json()
-    print("Received registration data:", data)  # Debug print
+    
+    if request.method == 'OPTIONS':
+        return ('', 204)
     
     if not all(k in data for k in ('email', 'username', 'password', 'NetID')):
         return jsonify({'error': 'Missing required fields'}), 400
@@ -19,11 +20,11 @@ def register():
     # Validate NYU email
     if not data['email'].endswith('@nyu.edu'):
         return jsonify({'error': 'Must use an NYU email address'}), 400
-    
-    # Validate NetID format
-    if not (data['NetID'].startswith('N') and len(data['NetID']) == 8):
-        return jsonify({'error': 'NetID must be in format N1234567'}), 400
-    
+
+    # Validate NYU ID format
+    if not (data['NYU_ID'].startswith('N') and len(data['NYU_ID']) == 8):
+        return jsonify({'error': 'NYU_ID must be in format N12345678'}), 400
+
     if User.get_by_email(data['email']):
         return jsonify({'error': 'Email already registered'}), 400
     
@@ -89,21 +90,52 @@ def login():
         print("Checking password:", data['password'])
         if user.check_password(data['password']):
             print("Password check succeeded")
-            # Mark session as permanent first
-            session.permanent = True
-            print(f"Session before login: {session}")
             
-            # Log in the user with Flask-Login
-            success = login_user(user, remember=True, force=True)
-            if not success:
-                return jsonify({'error': 'Failed to log in user'}), 500
+            print(f"Starting login process for user ID: {user.id}")
+            
+            # Clear any existing session data
+            if current_user.is_authenticated:
+                print(f"Found existing authenticated user: {current_user.id}")
+                logout_user()
                 
-            print(f"Login success: {success}, User ID: {user.id}")
+            session.clear()
+            print("Cleared session")
             
-            # Force set session data
+            # Expire all existing cookies in response
+            response = jsonify({
+                'success': True,
+                'user': {
+                    'id': str(user.id),
+                    'email': user.email,
+                    'username': user.username
+                }
+            })
+            
+            for cookie in request.cookies:
+                response.delete_cookie(cookie)
+            
+            # Set up fresh session
+            session.permanent = True
+            
+            # Log in the new user with fresh session
+            if not login_user(user, remember=True, fresh=True):
+                print(f"Failed to login user: {user.id}")
+                return jsonify({'error': 'Failed to log in user'}), 500
+            
+            # Set new session data
             session['user_id'] = str(user.id)
-            session['email'] = user.email
+            session['_fresh'] = True
             session.modified = True
+            
+            print(f"Successfully logged in user: {user.id}")
+            
+            # Verify the logged-in user
+            if current_user.is_authenticated:
+                print(f"Verified logged in user: {current_user.id}")
+            else:
+                print("Warning: User not authenticated after login!")
+                
+            return response
             
             print(f"Session after setting data: {session}")
             
@@ -157,11 +189,36 @@ def login():
     print("Password incorrect")  # Debug print
     return jsonify({'error': 'Invalid email or password'}), 401
 
-@bp.route('/logout', methods=['POST'])
+@bp.route('/logout', methods=['POST', 'OPTIONS'])
 @login_required
 def logout():
-    logout_user()
-    return jsonify({'message': 'Logged out successfully'})
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        return response
+
+    logout_user()  # Clear Flask-Login's session
+    session.clear()  # Clear all session data
+    
+    response = jsonify({'message': 'Logged out successfully'})
+    
+    # Clear the session cookie
+    response.delete_cookie('session', 
+                         secure=True, 
+                         httponly=True, 
+                         samesite='None',
+                         domain=None,
+                         path='/')
+    
+    # Add CORS headers
+    origin = request.headers.get('Origin')
+    response.headers.update({
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    })
+    
+    return response
 
 @bp.route('/reset-password', methods=['POST'])
 def request_password_reset():
