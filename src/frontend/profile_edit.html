@@ -161,6 +161,23 @@
                   });
                 };
                 reader.readAsDataURL(file);
+              }
+
+              // validate and show preview when a file is chosen
+              fileInput.addEventListener('change', () => {
+                const file = fileInput.files && fileInput.files[0];
+                if (!file) return;
+                if (!ACCEPTED.includes(file.type)) {
+                  alert('Unsupported file type');
+                  fileInput.value = '';
+                  return;
+                }
+                if (file.size > MAX_MB * 1024 * 1024) {
+                  alert('File too large (max 5MB)');
+                  fileInput.value = '';
+                  return;
+                }
+                loadPreview(file);
               });
 
               ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, e => {

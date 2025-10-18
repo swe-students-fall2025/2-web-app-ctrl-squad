@@ -46,7 +46,21 @@ A little exercise to build a web application following an agile development proc
 
 ## Steps necessary to run the software
 
-See instructions. Delete this line and place instructions to download, configure, and run the software here.
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+```
+
+2. Navigate to the project directory:
+
+```bash
+cd 2-web-app-ctrl-squad
+```
+
+3. Follow the setup instructions for the backend
+- Backend: See `python_backend/README.md`
+
 
 ## Task boards
 

@@ -10,14 +10,6 @@ bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 @bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
-    if request.method == 'OPTIONS':
-        # Handling preflight request
-        response = jsonify({'status': 'ok'})
-        return response
-
-    if not request.is_json:
-        return jsonify({'error': 'Content-Type must be application/json'}), 415
-
     data = request.get_json()
     print("Received registration data:", data)  # Debug print
     
@@ -28,24 +20,12 @@ def register():
     if not data['email'].endswith('@nyu.edu'):
         return jsonify({'error': 'Must use an NYU email address'}), 400
     
-    # Check if NetID is not empty
-    if not data['NetID'].strip():
-        return jsonify({'error': 'NetID is required'}), 400
+    # Validate NetID format
+    if not (data['NetID'].startswith('N') and len(data['NetID']) == 8):
+        return jsonify({'error': 'NetID must be in format N1234567'}), 400
     
-    # Check if email is already registered
     if User.get_by_email(data['email']):
         return jsonify({'error': 'Email already registered'}), 400
-    
-    # Check if NetID is already registered
-    if User.get_by_nyu_id(data['NetID']):
-        return jsonify({'error': 'NetID already registered'}), 400
-        
-    # Check if username is already taken
-    # Using the db connection from app
-    from app import db
-    existing_user = db.users.find_one({'username': data['username']})
-    if existing_user:
-        return jsonify({'error': 'Username already taken'}), 400
     
     user = User.create_user(
         email=data['email'],
@@ -53,9 +33,6 @@ def register():
         password=data['password'],
         nyu_id=data['NetID']
     )
-    
-    if user is None:
-        return jsonify({'error': 'Failed to create user. Please try again.'}), 400
     
     login_user(user)
     return jsonify({'message': 'Registration successful', 'user': {'id': user.id, 'email': user.email, 'username': user.username}}), 201
@@ -112,25 +89,18 @@ def login():
         print("Checking password:", data['password'])
         if user.check_password(data['password']):
             print("Password check succeeded")
-            
-            # Clear any existing session data first
-            session.clear()
-            
-            # Mark session as permanent
+            # Mark session as permanent first
             session.permanent = True
             print(f"Session before login: {session}")
             
-            # Log out any existing user first
-            logout_user()
-            
-            # Log in the new user
+            # Log in the user with Flask-Login
             success = login_user(user, remember=True, force=True)
             if not success:
                 return jsonify({'error': 'Failed to log in user'}), 500
                 
             print(f"Login success: {success}, User ID: {user.id}")
             
-            # Set new session data
+            # Force set session data
             session['user_id'] = str(user.id)
             session['email'] = user.email
             session.modified = True
@@ -187,35 +157,11 @@ def login():
     print("Password incorrect")  # Debug print
     return jsonify({'error': 'Invalid email or password'}), 401
 
-@bp.route('/logout', methods=['POST', 'OPTIONS'])
+@bp.route('/logout', methods=['POST'])
+@login_required
 def logout():
-    if request.method == 'OPTIONS':
-        response = jsonify({'status': 'ok'})
-        return response
-
-    logout_user()  # Clear Flask-Login's session
-    session.clear()  # Clear all session data
-    
-    response = jsonify({'message': 'Logged out successfully'})
-    
-    # Clear the session cookie
-    response.delete_cookie('session', 
-                         secure=True, 
-                         httponly=True, 
-                         samesite='None',
-                         domain=None,
-                         path='/')
-    
-    # Add CORS headers
-    origin = request.headers.get('Origin')
-    response.headers.update({
-        'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-    })
-    
-    return response
+    logout_user()
+    return jsonify({'message': 'Logged out successfully'})
 
 @bp.route('/reset-password', methods=['POST'])
 def request_password_reset():
