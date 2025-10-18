@@ -132,7 +132,7 @@ def create_roommate_post():
         print("Roommate post created:", presented)
         return jsonify({
             "success": True,
-            "post": post,
+            "post": _present_roommate(presented),
             "message": "Roommate post created successfully"
         }), 201
 
