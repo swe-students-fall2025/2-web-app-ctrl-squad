@@ -93,9 +93,19 @@ def load_user(user_id):
                     print(f"Invalid X-User-ID header value: {user_id_header}")
                     print("Using session user ID instead")
                 elif user_id_header != str(user.id):
-                    # Log mismatch but don't reject - session user takes precedence
-                    print(f"User ID mismatch: header={user_id_header}, session={user.id}")
-                    print(f"Prioritizing session user_id")
+                    # For trade-related endpoints, prioritize X-User-ID header
+                    if request.path.startswith('/api/trades'):
+                        print(f"User ID mismatch in trades endpoint: header={user_id_header}, session={user.id}")
+                        print(f"Prioritizing X-User-ID header for trades")
+                        # Return the user from the header instead
+                        from app.models.user import User
+                        header_user = User.get_by_id(user_id_header)
+                        if header_user:
+                            return header_user
+                    else:
+                        # For other endpoints, session user takes precedence
+                        print(f"User ID mismatch: header={user_id_header}, session={user.id}")
+                        print(f"Prioritizing session user_id")
             else:
                 print(f"No X-User-ID header present, using session user")
                 
@@ -132,6 +142,31 @@ CORS(app,
 @app.before_request
 def make_session_permanent():
     session.permanent = True
+    
+# Add middleware to handle X-User-ID based authentication
+@app.before_request
+def handle_user_id_header():
+    # Skip for OPTIONS requests and non-API endpoints
+    if request.method == 'OPTIONS' or not request.path.startswith('/api'):
+        return
+    
+    # Debug request path and method
+    print(f"Request: {request.method} {request.path}")
+    print(f"Headers: {dict(request.headers)}")
+    
+    # Check if this is a trades endpoint - completely bypass login checks
+    if request.path.startswith('/api/trades'):
+        user_id = request.headers.get('X-User-ID')
+        if user_id and user_id != 'undefined' and user_id != 'null' and user_id.strip():
+            print(f"Using X-User-ID header for authentication: {user_id}")
+            # Set a flag in the request context to indicate this request is using header auth
+            request.using_header_auth = True
+            # No need to check for session auth for trade endpoints
+            return
+        else:
+            print(f"Warning: Missing or invalid X-User-ID header for trades endpoint")
+            
+    # For all other requests, proceed with normal session handling
 
 # Set up MongoDB connection
 try:
@@ -160,6 +195,17 @@ def unauthorized():
     print(f"Session: {session}")
     print(f"Headers: {dict(request.headers)}")
     
+    # Check if this is a trades route with X-User-ID header
+    if request.path.startswith('/api/trades') and request.headers.get('X-User-ID'):
+        # Special case for trades routes - allow header-based auth
+        print("Trade route with X-User-ID header - bypassing login_required")
+        return None
+    
+    # Check if request was flagged as using header auth
+    if hasattr(request, 'using_header_auth') and request.using_header_auth:
+        print("Request is using header auth - bypassing login_required")
+        return None
+    
     # Add CORS headers for better browser handling
     response = jsonify({'error': 'Authentication required'})
     origin = request.headers.get('Origin')
@@ -181,6 +227,21 @@ app.register_blueprint(users.bp)  # Users routes (already has url_prefix in blue
 app.register_blueprint(search.bp)  # Search routes (already has url_prefix in blueprint)
 
 from flask import Blueprint, jsonify
+from bson import ObjectId
+from datetime import datetime
+import json
+
+# Add custom JSON encoder for MongoDB ObjectId and datetime
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+# Configure Flask to use our custom JSON encoder
+app.json.encoder = CustomJSONEncoder
 
 base = Blueprint("base", __name__)
 

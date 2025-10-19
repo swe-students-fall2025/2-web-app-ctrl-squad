@@ -235,7 +235,7 @@
                     <div class="skel">item Description</div>
 
                     <div class="buyer-trade-actions">
-                        <a class="btn-trade btn-danger" href="requestReject.html">Reject Trade</a>
+                        <button id="rejectBtn" class="btn-trade btn-danger" type="button">Reject Trade</button>
                         <button id="acceptBtn" class="btn-trade btn-great" type="button">Accept Trade</button>
                     </div>
                 </div>
@@ -276,8 +276,110 @@
             const lastNonAdd = sessionStorage.getItem('lastNonAdd');
             if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) { location.href = lastNonAdd; return; }
 
-            location.href = base + "profile.html";
+            location.href = base + "seller_trade.html";
         }
+        
+        // Check user authentication
+        async function checkAuth() {
+            try {
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                const response = await fetch(`${baseUrl}/api/users/profile`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+                    return null;
+                }
+
+                const userData = await response.json();
+                console.log('User profile data:', userData);
+                
+                // Store user ID in localStorage for other pages to use
+                const userId = userData.data._id || userData.data.id;
+                localStorage.setItem('currentUserId', userId);
+                console.log('Set currentUserId in localStorage:', userId);
+                
+                return userId;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+                return null;
+            }
+        }
+
+        // Load trade details
+        async function loadTradeDetails() {
+            try {
+                // Get current trade ID from URL
+                const params = new URLSearchParams(location.search);
+                const tradeId = params.get('id');
+                if (!tradeId) {
+                    throw new Error('No trade ID found');
+                }
+                
+                // Check authentication first
+                const userId = await checkAuth();
+                if (!userId) return;
+                
+                // Get API base URL
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                
+                // Fetch trade details
+                const response = await fetch(`${baseUrl}/api/trades/${tradeId}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-User-ID': userId
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch trade: ${response.status}`);
+                }
+                
+                const trade = await response.json();
+                console.log('Trade details:', trade);
+                
+                // Update the UI with trade details
+                document.querySelector('.img-skel').innerHTML = trade.images && trade.images.length > 0 
+                    ? `<img src="${trade.images[0]}" alt="Item image" style="width:100%; height:100%; object-fit:cover;">` 
+                    : 'No image available';
+                
+                document.querySelector('.skel').innerHTML = trade.trade_preferences.buyer_id || 'Unknown buyer';
+                
+                // Set the category/status
+                const statusText = trade.trade_preferences.status || trade.status;
+                document.querySelectorAll('.skel')[1].innerHTML = `Status: ${statusText.charAt(0).toUpperCase() + statusText.slice(1)}`;
+                
+                // Set the description
+                document.querySelectorAll('.skel')[2].innerHTML = trade.description || 'No description provided';
+                
+                // Disable accept/reject buttons if the trade is not pending
+                const status = trade.trade_preferences.status || trade.status;
+                if (status !== 'pending') {
+                    document.getElementById('acceptBtn').disabled = true;
+                    document.getElementById('rejectBtn').disabled = true;
+                    
+                    document.getElementById('acceptBtn').classList.add('btn-disabled');
+                    document.getElementById('rejectBtn').classList.add('btn-disabled');
+                }
+                
+            } catch (error) {
+                console.error('Error loading trade details:', error);
+                alert('Failed to load trade details. Please try again.');
+            }
+        }
+        
+        // Load trade details when page loads
+        document.addEventListener('DOMContentLoaded', loadTradeDetails);
 
         // ===== Popup logic =====
         const popup = document.getElementById('popup');
@@ -302,15 +404,122 @@
         cancelBtn.addEventListener('click', closePopup);
         popup.addEventListener('click', (e) => { if (e.target === popup) closePopup(); });
         window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && popup.style.display === 'block') closePopup(); });
+        
+        // Handle reject trade button
+        document.getElementById('rejectBtn').addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to reject this trade request?')) {
+                return;
+            }
+            
+            try {
+                // Get current trade ID from URL
+                const params = new URLSearchParams(location.search);
+                const tradeId = params.get('id');
+                if (!tradeId) {
+                    throw new Error('No trade ID found');
+                }
+                
+                // Get user ID
+                const userId = localStorage.getItem('currentUserId');
+                if (!userId) {
+                    alert('You must be logged in to reject a trade');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Get API base URL
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                
+                // Update the trade status
+                const response = await fetch(`${baseUrl}/api/trades/${tradeId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-User-ID': userId
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        status: 'cancelled',
+                        cancelled_by: userId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to update trade: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Trade rejected:', data);
+                
+                // Redirect back to seller trades page
+                const base = location.pathname.replace(/[^\/]+$/, "");
+                location.href = base + "seller_trade.html";
+                
+            } catch (error) {
+                console.error('Error rejecting trade:', error);
+                alert('Failed to reject trade. Please try again.');
+            }
+        });
 
 
-        form.addEventListener('submit', (e) => {
+        // Handle accept trade form submission
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const note = textarea.value.trim();
-
-            closePopup();
-            const base = location.pathname.replace(/[^\/]+$/, "");
-            location.href = base + "requestAccept.html";
+            
+            try {
+                // Get current trade ID from URL
+                const params = new URLSearchParams(location.search);
+                const tradeId = params.get('id');
+                if (!tradeId) {
+                    throw new Error('No trade ID found');
+                }
+                
+                // Get user ID
+                const userId = localStorage.getItem('currentUserId');
+                if (!userId) {
+                    alert('You must be logged in to accept a trade');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Get API base URL
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                
+                // Update the trade status
+                const response = await fetch(`${baseUrl}/api/trades/${tradeId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-User-ID': userId
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        status: 'accepted',
+                        seller_note: note
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to update trade: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Trade accepted:', data);
+                
+                closePopup();
+                
+                // Redirect to confirmation page
+                const base = location.pathname.replace(/[^\/]+$/, "");
+                location.href = base + "seller_trade_confirm.html?id=" + tradeId;
+                
+            } catch (error) {
+                console.error('Error accepting trade:', error);
+                alert('Failed to accept trade. Please try again.');
+                closePopup();
+            }
         });
     </script>
 </body>

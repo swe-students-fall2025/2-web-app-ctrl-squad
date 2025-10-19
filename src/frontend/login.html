@@ -80,10 +80,31 @@
           // Store user info and token in localStorage
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('token', data.token);
+          
+          // Ensure we store the user ID as currentUserId for trade requests
+          if (data.user && data.user.id) {
+            localStorage.setItem('currentUserId', data.user.id);
+            console.log('Stored user ID in localStorage.currentUserId:', data.user.id);
+          } else if (data.user) {
+            // Try to extract user ID from the response structure
+            const userId = data.user._id || data.user.id || data.user.userId;
+            if (userId) {
+              localStorage.setItem('currentUserId', userId);
+              console.log('Extracted and stored user ID:', userId);
+            }
+          }
+          
           console.log('Login successful, user data and token stored');
           
-          // Redirect to home page
-          window.location.href = 'home.html';
+          // Check if there's a redirect URL saved (for post-login redirect)
+          const redirectUrl = localStorage.getItem('redirectAfterLogin');
+          if (redirectUrl) {
+            localStorage.removeItem('redirectAfterLogin'); // Clear the saved URL
+            window.location.href = redirectUrl; // Redirect back to original page
+          } else {
+            // Redirect to home page
+            window.location.href = 'home.html';
+          }
         } else {
           console.error('Login failed:', data.error);
           alert(data.error || 'Login failed. Please try again.');

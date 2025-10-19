@@ -80,6 +80,32 @@
             justify-content: center;
             text-align: center;
             padding: 10px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: transform 0.3s;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .media:hover {
+            transform: scale(1.02);
+        }
+        
+        .media::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .media:hover::after {
+            opacity: 1;
         }
 
         .meta {
@@ -145,6 +171,45 @@
             color: #fff;
         }
         .muted{ color:var(--ink-2); text-align:center; }
+        
+        .trade-info {
+            margin-top: 10px;
+            padding: 5px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .skel-chip {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            font-size: 13px;
+            line-height: 1.2;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        .skel-chip:hover {
+            background-color: #e6e6e6;
+        }
+        
+        /* Status-specific styling */
+        .status-pending, .status-open, .status-ongoing {
+            color: #f57c00;
+        }
+        
+        .status-accepted {
+            color: #2e7d32;
+        }
+        
+        .status-rejected, .status-cancelled {
+            color: #c62828;
+        }
+        
+        .status-completed {
+            color: #1565c0;
+        }
 
 
     </style>
@@ -161,92 +226,14 @@
             <div class="main-content">
                 <div class="block">
                     <h2 class="page-title">Ongoing</h2>
-                    <div class="wrap">
-                        <!-- sample post lists -->
-                        <article class="post">
-                            <div class="post-head">
-                                <a class="skel-input" href="exchange_post.html" style="width:250px;">post title</a>
-                                <a class="badge" href="buyer_trade_page.html">View Status</a>
-                            </div>
-                            <div class="post-body">
-                                <div class="media">image /<br> Description</div>
-                                <div class="meta">
-                                    <div class="skel-chip">favorites</div>
-                                    <div class="skel-chip">username</div>
-                                    <div class="skel-chip">time posted</div>
-                                </div>
-                            </div>
-                        </article>
-
-                        <article class="post">
-                            <div class="post-head">
-                                <a class="skel-input" href="exchange_post.html">post title</a>
-                                <a class="badge" href="buyer_trade_page.html">View Status</a>
-                            </div>
-                            <div class="post-body">
-                                <div class="media">image /<br> Description</div>
-                                <div class="meta">
-                                    <div class="skel-chip">favorites</div>
-                                    <div class="skel-chip">username</div>
-                                    <div class="skel-chip">time posted</div>
-                                </div>
-                            </div>
-                        </article>
+                    <div class="wrap" id="ongoingTrades">
+                        <div class="muted">Loading ongoing trades...</div>
                     </div>
                 </div>
                 <div class="block">
                     <h2 class="page-title">Completed</h2>
-                    <div class="wrap">
-                        <!-- sample post lists -->
-
-                         <!-- type 1: cancelled trade - meaning user cancelled the trade or the seller reject the trade -->
-                        <article class="post">
-                            <div class="post-head">
-                                <a class="skel-input" href="exchange_post.html">post title</a>
-                                <div class="badge btn-danger" href="buyer_trade.html">Cancelled</div>
-                            </div>
-                            <div class="post-body">
-                                <div class="media">image /<br> Description</div>
-                                <div class="meta">
-                                    <div class="skel-chip">favorites</div>
-                                    <div class="skel-chip">username</div>
-                                    <div class="skel-chip">time posted</div>
-                                </div>
-                            </div>
-                        </article>
-
-                         <!-- type 2: incomplete trade - meaning trade is approved but the app doesn't know if it was successful offline -->
-                        <article class="post">
-                            <div class="post-head">
-                                <a class="skel-input" href="exchange_post.html" >post title</a>
-                                <a class="badge btn-notice" href="buyer_trade.html">Confirm Status</a>
-                            </div>
-                            <div class="post-body">
-                                <div class="media">image /<br> Description</div>
-                                <div class="meta">
-                                    <div class="skel-chip">favorites</div>
-                                    <div class="skel-chip">username</div>
-                                    <div class="skel-chip">time posted</div>
-                                </div>
-                            </div>
-                        </article>
-
-                        <!-- type 3: completed - meaning trade is completed successfully offline -->
-
-                        <article class="post">
-                            <div class="post-head">
-                                <div class="skel-input">post title</div>
-                                <a class="badge" href="buyer_trade.html">View Receipt</a>
-                            </div>
-                            <div class="post-body">
-                                <div class="media">image /<br> Description</div>
-                                <div class="meta">
-                                    <div class="skel-chip">favorites</div>
-                                    <div class="skel-chip">username</div>
-                                    <div class="skel-chip">time posted</div>
-                                </div>
-                            </div>
-                        </article>
+                    <div class="wrap" id="completedTrades">
+                        <div class="muted">Loading completed trades...</div>
                     </div>
                 </div>
             </div>
@@ -259,6 +246,364 @@
             const base = location.pathname.replace(/[^\/]+$/, "");
             location.href = base + "profile.html";
         }
+        
+        // Check authentication and update currentUserId
+        async function checkAuth() {
+            try {
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                const response = await fetch(`${baseUrl}/api/users/profile`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+                    return null;
+                }
+
+                const userData = await response.json();
+                
+                // Store user ID in localStorage for other pages to use
+                const userId = userData.data._id || userData.data.id;
+                localStorage.setItem('currentUserId', userId);
+                console.log('Set currentUserId in localStorage:', userId);
+                
+                return userId;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+                return null;
+            }
+        }
+        
+        // Function to load user trades
+        async function loadUserTrades() {
+            try {
+                // Check authentication first
+                const userId = await checkAuth();
+                if (!userId) {
+                    return;
+                }
+                
+                // Get API base URL
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                
+                console.log('Fetching trades for user:', userId);
+                
+                // Fetch trades for the current user
+                const response = await fetch(`${baseUrl}/api/trades/user/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin,
+                        'X-User-ID': userId
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                console.log('Trade response status:', response.status);
+                
+                if (response.status === 401) {
+                    console.error('Authentication failed');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`Failed to fetch trades: ${response.status} - ${errorText}`);
+                }
+                
+                const trades = await response.json();
+                console.log('User trades loaded:', trades);
+                
+                // Make sure trades is an array
+                const tradesArray = Array.isArray(trades) ? trades : 
+                                   (trades && typeof trades === 'object' ? [trades] : []);
+                
+                console.log('Processing trades array:', tradesArray);
+                
+                // Separate trades into ongoing and completed
+                const ongoing = tradesArray.filter(trade => 
+                    trade && (trade.status === 'pending' || trade.status === 'accepted' || 
+                             trade.status === 'open' || trade.status === 'ongoing'));
+                
+                const completed = tradesArray.filter(trade => 
+                    trade && (trade.status === 'completed' || trade.status === 'cancelled' || 
+                             trade.status === 'rejected'));
+                
+                console.log('Ongoing trades:', ongoing);
+                console.log('Completed trades:', completed);
+                
+                // Display trades
+                displayTrades('ongoingTrades', ongoing);
+                displayTrades('completedTrades', completed);
+                
+            } catch (error) {
+                console.error('Error loading trades:', error);
+                document.getElementById('ongoingTrades').innerHTML = 
+                    `<div class="muted">Error loading trades: ${error.message}</div>`;
+                document.getElementById('completedTrades').innerHTML = 
+                    `<div class="muted">Error loading trades: ${error.message}</div>`;
+            }
+        }
+        
+        // Function to fetch post details
+        async function fetchPostDetails(postId) {
+            try {
+                if (!postId) {
+                    console.log('No post ID provided to fetchPostDetails');
+                    return null;
+                }
+                
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                console.log(`Fetching post details for ID ${postId} from ${baseUrl}/api/posts/${postId}`);
+                
+                // Get current user ID for authentication
+                const userId = localStorage.getItem('currentUserId');
+                
+                const response = await fetch(`${baseUrl}/api/posts/${postId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-User-ID': userId || '' // Add user ID for authentication if available
+                    },
+                    credentials: 'include' // Include credentials for authentication
+                });
+                
+                if (!response.ok) {
+                    console.error(`Failed to fetch post details for ID ${postId}: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    return null;
+                }
+                
+                const post = await response.json();
+                console.log(`Post details for ${postId}:`, post);
+                
+                // Handle different response formats
+                if (post.data) {
+                    // If the API returns { success: true, data: {...} }
+                    return post.data;
+                }
+                
+                return post;
+            } catch (error) {
+                console.error(`Error fetching post details for ${postId}:`, error);
+                return null;
+            }
+        }
+        
+        // Function to display trades in a container
+        async function displayTrades(containerId, trades) {
+            const container = document.getElementById(containerId);
+            
+            if (!trades || trades.length === 0) {
+                container.innerHTML = '<div class="muted">No trades found</div>';
+                return;
+            }
+            
+            console.log(`Rendering ${trades.length} trades for ${containerId}`);
+            
+            // Set loading state
+            container.innerHTML = '<div class="muted">Loading trades...</div>';
+            
+            try {
+                // Process each trade to create HTML - wait for all promises to resolve
+                const tradeHTMLPromises = trades.map(async (trade) => {
+                    try {
+                        // For debugging
+                        console.log('Processing trade:', trade);
+                        
+                        // Extract post data from trade_preferences or post field
+                        let postData = {};
+                        let postId = '';
+                        let postTitle = '';
+                        let sellerName = 'Unknown';
+                        
+                        // Get post ID from trade preferences
+                        if (trade.trade_preferences && trade.trade_preferences.post_id) {
+                            postId = trade.trade_preferences.post_id;
+                            
+                            // Try to fetch the post details to get more accurate information
+                            const postDetails = await fetchPostDetails(postId);
+                            console.log('Fetched post details:', postDetails);
+                            
+                            if (postDetails) {
+                                postData = postDetails;
+                                postTitle = postDetails.title || trade.item_name || 'Unknown Item';
+                                sellerName = postDetails.author_name || postDetails.user_name || 
+                                            (trade.trade_preferences.seller_name || 'Unknown');
+                            } else {
+                                // If we couldn't fetch post details, use what we have in trade
+                                postTitle = trade.trade_preferences.post_title || trade.item_name || 'Trade Request';
+                                sellerName = trade.trade_preferences.seller_name || 'Unknown';
+                                postData = {
+                                    title: postTitle,
+                                    description: trade.description || 'No description available'
+                                };
+                            }
+                        } else if (trade.post) {
+                            // This is from the older API structure
+                            postData = trade.post;
+                            postId = trade.post._id;
+                            postTitle = trade.post.title || 'Unknown Item';
+                            sellerName = trade.post.user_name || trade.post.author_name || 'Unknown';
+                        } else {
+                            // Fallback
+                            postTitle = trade.item_name || 'Unknown Item';
+                            postData = {
+                                title: postTitle,
+                                description: trade.description || 'No description available'
+                            };
+                            sellerName = 'Unknown';
+                        }
+                        const postImage = (postData.images && postData.images.length > 0) 
+                            ? postData.images[0] 
+                            : '';
+                        const postDescription = postData.description || 'No description available';
+                        
+                        // Format dates - handle different date formats
+                        const createdDate = trade.created_at ? new Date(trade.created_at).toLocaleString() : 
+                                          (trade.time_initiated ? new Date(trade.time_initiated).toLocaleString() : 'Unknown date');
+                        
+                        // Get trade ID - handle different formats
+                        const tradeId = trade._id || '';
+                        
+                        // Determine badge style and text based on status
+                        let badgeClass = 'badge';
+                        let badgeText = 'View Status';
+                        let badgeLink = `buyer_trade_page.html?id=${tradeId}`;
+                        let isLink = true;
+                        
+                        // Normalize status (could be different formats)
+                        const status = trade.status ? trade.status.toLowerCase() : 'pending';
+                        
+                        switch(status) {
+                            case 'open':
+                            case 'ongoing':
+                            case 'pending':
+                                badgeClass = 'badge';
+                                badgeText = 'View Status';
+                                break;
+                            case 'accepted':
+                                badgeClass = 'badge btn-notice';
+                                badgeText = 'Confirm Status';
+                                break;
+                            case 'completed':
+                                badgeClass = 'badge btn-great';
+                                badgeText = 'View Receipt';
+                                break;
+                            case 'cancelled':
+                            case 'rejected':
+                                badgeClass = 'badge btn-danger';
+                                badgeText = 'Cancelled';
+                                isLink = false;
+                                break;
+                            default:
+                                badgeClass = 'badge';
+                                badgeText = 'View Details';
+                        }
+                        
+                        console.log('Seller name for trade:', sellerName);
+                        
+                        // Create image element with proper styling
+                        const imageStyle = postImage 
+                            ? `background-image: url('${postImage}'); background-size: cover; background-position: center;` 
+                            : '';
+                        
+                        // Ensure postId is present or use trade.id as fallback
+                        const linkToPost = postId ? `exchange_post.html?id=${postId}` : '#';
+                        
+                        // Get proper title text - avoid showing the trade ID
+                        const finalTitle = postTitle.startsWith('Trade request for post') ? 
+                            (trade.trade_preferences && trade.trade_preferences.post_title ? 
+                            trade.trade_preferences.post_title : 'Trade Request') : postTitle;
+                        
+                        return `
+                        <article class="post">
+                            <div class="post-head">
+                                <a class="skel-input" href="${linkToPost}">${finalTitle}</a>
+                                ${isLink 
+                                    ? `<a class="${badgeClass}" href="${badgeLink}">${badgeText}</a>`
+                                    : `<div class="${badgeClass}">${badgeText}</div>`
+                                }
+                            </div>
+                            <div class="post-body">
+                                <div class="media" style="${imageStyle}">
+                                    ${!postImage ? 'No Image<br>Available' : ''}
+                                </div>
+                                <div class="meta">
+                                    <div class="skel-chip status-${status}">Status: ${trade.status || 'Unknown'}</div>
+                                    <div class="skel-chip">Seller: ${sellerName}</div>
+                                    <div class="skel-chip">Requested: ${createdDate}</div>
+                                </div>
+                            </div>
+                        </article>
+                        `;
+                    } catch (error) {
+                        console.error('Error processing trade:', error);
+                        return `<div class="muted">Error loading trade: ${error.message}</div>`;
+                    }
+                });
+                
+                // Wait for all trade HTML promises to resolve
+                const tradeHTMLArray = await Promise.all(tradeHTMLPromises);
+                
+                // Join all the HTML strings and update the container
+                container.innerHTML = tradeHTMLArray.join('');
+            } catch (error) {
+                console.error('Error displaying trades:', error);
+                container.innerHTML = `<div class="muted">Error loading trades: ${error.message}</div>`;
+            }
+        }
+        
+        // Helper function to retry failed operations
+        async function retryOperation(operation, maxRetries = 2, delay = 1000) {
+            let lastError;
+            
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    return await operation();
+                } catch (error) {
+                    console.log(`Attempt ${attempt + 1}/${maxRetries + 1} failed:`, error);
+                    lastError = error;
+                    
+                    if (attempt < maxRetries) {
+                        console.log(`Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
+            
+            throw lastError;
+        }
+
+        // Load trades when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set API base URL if not already set
+            if (!localStorage.getItem('apiBaseUrl')) {
+                localStorage.setItem('apiBaseUrl', 'http://127.0.0.1:5000');
+            }
+            
+            // Load trades with retry capability
+            retryOperation(loadUserTrades)
+                .catch(error => {
+                    console.error('Failed to load trades after multiple attempts:', error);
+                    document.getElementById('ongoingTrades').innerHTML = 
+                        `<div class="muted">Failed to load trades. Please refresh the page.</div>`;
+                    document.getElementById('completedTrades').innerHTML = 
+                        `<div class="muted">Failed to load trades. Please refresh the page.</div>`;
+                });
+        });
     </script>
 </body>
 

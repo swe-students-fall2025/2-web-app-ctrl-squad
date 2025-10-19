@@ -33,6 +33,12 @@
             padding: 10px 18px;
             font-weight: 800;
             cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: #fff;
         }
     </style>
 </head>
@@ -43,13 +49,39 @@
 
             <div class="center">
                 <h1>Request<br />Sent!</h1>
-
-                <!-- back to home directly    home.html -->
-                <!-- amy: I actually prefer redirecting to the trade page with request status -->
-                <a class="btn" href="buyer_trade_page.html"><span>Back to trade</span></a>
+                <p>Your trade request has been submitted successfully!</p>
+                
+                <div style="margin-top: 20px;">
+                    <!-- Back to trade button (dynamic link via JavaScript) -->
+                    <a class="btn" id="tradeButton" href="#"><span>View Trade</span></a>
+                    
+                    <!-- Home button -->
+                    <a class="btn btn-secondary" href="home.html"><span>Go to Home</span></a>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <a href="profile.html" style="text-decoration: none; color: #333;">
+                        <p>View all your trades in Profile > Manage Orders</p>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // Set up the trade button link with the trade ID
+        document.addEventListener('DOMContentLoaded', function() {
+            const tradeId = localStorage.getItem('lastTradeId');
+            const tradeButton = document.getElementById('tradeButton');
+            
+            if (tradeId) {
+                tradeButton.href = `buyer_trade_page.html?tradeId=${tradeId}`;
+            } else {
+                // If no trade ID, use a basic link
+                tradeButton.href = 'buyer_trade_page.html';
+            }
+        });
+    </script>
 </body>
 
 </html>

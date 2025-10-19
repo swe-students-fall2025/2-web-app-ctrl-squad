@@ -299,15 +299,22 @@
         const post = await response.json();
         console.log('Post details loaded:', post);
         
+        // Store the post user ID (seller's ID) in a global variable
+        window.postUserId = post.user_id || post.user || '';
+        console.log('Seller (post user) ID:', window.postUserId);
+        
+        // Store seller name
+        window.sellerName = post.author_name || post.user_name || 'Unknown User';
+        
         // Update UI elements with post data
-        document.getElementById('username').textContent = post.author_name || post.user_name || 'Unknown User';
+        document.getElementById('username').textContent = window.sellerName;
         document.getElementById('postTitle').textContent = post.title || 'No Title';
         document.getElementById('postDescription').textContent = post.description || 'No Description';
         
         // Format the date properly
         const postDate = post.updated_at || post.created_at;
         const formattedDate = postDate ? new Date(postDate).toLocaleString() : 'Unknown date';
-        document.getElementById('postMeta').textContent = `Last edited ${formattedDate}`;
+        document.getElementById('postMeta').textContent = `Posted by: ${window.sellerName} • ${formattedDate}`;
 
         // Update image if available
         const imageElement = document.getElementById('postImage');
@@ -360,7 +367,31 @@
     }
 
     // Load post details when page loads
-    document.addEventListener('DOMContentLoaded', loadPostDetails);
+    document.addEventListener('DOMContentLoaded', async function() {
+      // First check if we have a user ID
+      const userId = localStorage.getItem('currentUserId');
+      console.log('Current user ID at page load:', userId);
+      
+      // If we have no user ID, check if there's a user object we can extract ID from
+      if (!userId || userId === 'undefined' || userId === 'null') {
+        console.log('No valid user ID found, checking if user data exists');
+        const userJson = localStorage.getItem('user');
+        if (userJson) {
+          try {
+            const userData = JSON.parse(userJson);
+            if (userData && userData.id) {
+              localStorage.setItem('currentUserId', userData.id);
+              console.log('Fixed user ID from user data:', userData.id);
+            }
+          } catch (e) {
+            console.error('Error parsing user data:', e);
+          }
+        }
+      }
+      
+      // Now load the post details
+      loadPostDetails();
+    });
 
     // Smart back
     function smartBack() {
@@ -420,16 +451,179 @@
     function handleCancel() { closePopup(); }
     cancelBtn.addEventListener('click', handleCancel);
 
-    // confirm -> submit then, replaceable by API
-    function handleSubmit(e) {
+    // Confirm exchange request
+    async function handleSubmit(e) {
       if (e) e.preventDefault();
-      const msg = document.getElementById('message').value.trim();
       
-      closePopup();
-      // link to request_sent.html
-      const base = location.pathname.replace(/[^\/]+$/, "");
-      location.href = base + "request_sent.html";
+      const contactInfo = document.getElementById('message').value.trim();
+      if (!contactInfo) {
+        alert('Please enter your contact information');
+        return;
+      }
+      
+      try {
+        // Get post ID and user ID
+        const params = new URLSearchParams(window.location.search);
+        const postId = params.get('id');
+        if (!postId) {
+          throw new Error('No post ID found');
+        }
+        
+        // Double check for user ID from multiple places
+        let userId = localStorage.getItem('currentUserId');
+        console.log('Current user ID from localStorage.currentUserId:', userId);
+        
+        // If we don't have a user ID, try to get it from the user object
+        if (!userId || userId === 'undefined' || userId === 'null') {
+          const userJson = localStorage.getItem('user');
+          if (userJson) {
+            try {
+              const userData = JSON.parse(userJson);
+              if (userData && userData.id) {
+                userId = userData.id;
+                localStorage.setItem('currentUserId', userId);
+                console.log('Retrieved user ID from user data:', userId);
+              }
+            } catch (e) {
+              console.error('Error parsing user data:', e);
+            }
+          }
+        }
+        
+        // Check if the user is logged in
+        if (!userId || userId === 'undefined' || userId === 'null') {
+          alert('You must be logged in to request an exchange');
+          // Save the current URL to redirect back after login
+          localStorage.setItem('redirectAfterLogin', window.location.href);
+          window.location.href = 'login.html';
+          return;
+        }
+        
+        // Log confirmation
+        console.log('Using user ID for trade request:', userId);
+        
+        // Get API base URL
+        const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+        
+        // Disable the confirm button and show loading state
+        const confirmBtn = document.getElementById('confirmBtn');
+        const originalBtnText = confirmBtn.textContent;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Sending...';
+        
+        console.log('Sending trade request with user ID:', userId);
+        
+        // Create the trade request
+        const response = await fetch(`${baseUrl}/api/trades`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': window.location.origin,
+            'X-User-ID': userId  // Add the X-User-ID header
+          },
+          credentials: 'include',
+          mode: 'cors',
+          body: JSON.stringify({
+            item_name: document.querySelector('.block.title').textContent.trim(), // Use the actual post title
+            description: `Contact info: ${contactInfo}`,
+            trade_preferences: {
+              post_id: postId,
+              buyer_id: userId,
+              contact_info: contactInfo,
+              status: 'pending',
+              seller_id: window.postUserId || '', // Use the global variable we set earlier
+              post_title: document.querySelector('.block.title').textContent.trim(), // Store post title
+              seller_name: document.querySelector('#username').textContent.trim(), // Get seller name directly from the DOM
+              post_description: document.querySelector('.block.desc').textContent.trim().substring(0, 100) + '...' // Store a snippet of post description
+            }
+          })
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (response.status === 401) {
+          let errorText = await response.text();
+          console.error('Authentication error:', errorText);
+          
+          try {
+            // Try to parse error as JSON
+            const errorJson = JSON.parse(errorText);
+            console.log('Parsed error JSON:', errorJson);
+            
+            // Get error message
+            const errorMsg = errorJson.error || 'You must be logged in to request an exchange';
+            alert(errorMsg);
+          } catch (e) {
+            // If we can't parse as JSON, just show generic message
+            alert('You must be logged in to request an exchange');
+          }
+          
+          // Clear the current user ID since it seems to be invalid
+          localStorage.removeItem('currentUserId');
+          
+          // Store the current URL to return after login
+          localStorage.setItem('redirectAfterLogin', window.location.href);
+          window.location.href = 'login.html';
+          return;
+        }
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Server error (${response.status}):`, errorText);
+          let errorMsg;
+          try {
+            // Try to parse the error as JSON
+            const errorJson = JSON.parse(errorText);
+            errorMsg = errorJson.error || `Server error: ${response.status}`;
+          } catch (e) {
+            errorMsg = `Server error: ${response.status}`;
+          }
+          throw new Error(errorMsg);
+        }
+        
+        const data = await response.json();
+        console.log('Trade request created:', data);
+        
+        // Close popup and redirect to request_sent.html
+        closePopup();
+        
+        // Store the trade ID in local storage for reference
+        let tradeId;
+        
+        // Check all possible locations for the trade ID in the response
+        if (data.trade_id) {
+          tradeId = data.trade_id;
+        } else if (data.trade && data.trade._id) {
+          tradeId = data.trade._id;
+        } else if (data._id) {
+          tradeId = data._id;
+        }
+        
+        console.log('Trade created with ID:', tradeId);
+        
+        if (tradeId) {
+          // Store the trade ID for use in request_sent.html
+          localStorage.setItem('lastTradeId', tradeId);
+          console.log('Stored trade ID in localStorage:', tradeId);
+        } else {
+          console.error('No trade ID found in response:', data);
+        }
+        
+        const base = location.pathname.replace(/[^\/]+$/, "");
+        // Redirect to request_sent.html
+        window.location.href = base + "request_sent.html";
+      } catch (error) {
+        console.error('Error creating trade request:', error);
+        alert('Failed to send exchange request: ' + error.message);
+        
+        // Reset button state
+        const confirmBtn = document.getElementById('confirmBtn');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm';
+      }
     }
+    
     form.addEventListener('submit', handleSubmit);
 
     popup.addEventListener('click', (ev) => {
