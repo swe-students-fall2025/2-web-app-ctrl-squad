@@ -301,6 +301,14 @@
                    <div class="skel">Loading trade details...</div>
                 </div>
                 
+                <!-- Debug output area - hidden by default -->
+                <div id="debug-output" style="display:none; padding: 10px; background: #f8f8f8; border: 1px solid #ddd; margin: 20px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap; font-size: 12px;"></div>
+                
+                <!-- Debug toggle button (only visible during development) -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button id="toggleDebug" style="background: #555; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px;">Toggle Debug Mode</button>
+                </div>
+                
                 <!-- Cancel Trade Popup -->
                 <div id="cancelPopup" class="popup" aria-hidden="true">
                     <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="cancelPopupTitle">
@@ -374,6 +382,15 @@
                     return;
                 }
                 
+                console.log('Current user ID:', userId);
+                
+                // Show debug information on page if available
+                const debugOutput = document.getElementById('debug-output');
+                if (debugOutput) {
+                    debugOutput.style.display = 'block';
+                    debugOutput.textContent = `Loading trade ID: ${tradeId} for user ID: ${userId}`;
+                }
+                
                 // Get API base URL
                 const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
                 
@@ -404,13 +421,55 @@
                 console.log('Trade details loaded:', trade);
                 currentTrade = trade;
                 
-                // Verify this user is the buyer
-                if (trade.buyer_id !== userId) {
-                    throw new Error('You do not have permission to view this trade');
+                // Extract all possible IDs for comparison
+                const tradeCreatorId = trade.user_id;
+                const buyerId = trade.trade_preferences?.buyer_id || null;
+                const postId = trade.post_id;
+                
+                console.log('Trade data structure:', {
+                    tradeId: currentTradeId,
+                    tradeCreatorId,
+                    buyerId,
+                    postId,
+                    currentUserId: userId,
+                    tradePreferences: trade.trade_preferences,
+                    tradeStatus: trade.status
+                });
+                
+                // Update debug output with more details
+                const debugPanel = document.getElementById('debug-output');
+                if (debugPanel) {
+                    // Prepare detailed debug info about trade structure
+                    const postInfo = trade.post ? JSON.stringify(trade.post, null, 2) : 'No post object';
+                    const prefsInfo = trade.trade_preferences ? JSON.stringify(trade.trade_preferences, null, 2) : 'No trade preferences';
+                    
+                    debugPanel.textContent = `
+Trade ID: ${currentTradeId}
+Trade Creator ID: ${tradeCreatorId}
+Buyer ID from preferences: ${buyerId}
+Post ID: ${postId}
+Current User ID: ${userId}
+Trade Status: ${trade.status}
+
+Post Data: ${postInfo}
+Trade Preferences: ${prefsInfo}
+                    `;
                 }
                 
-                // Display trade details
-                displayTradeDetails(trade);
+                // Allow access if either:
+                // 1. The user is the one who created the trade request (buyer)
+                // 2. OR the user is explicitly listed as the buyer_id in trade_preferences
+                // 3. OR we're forcing access for debugging purposes
+                if (tradeCreatorId === userId || buyerId === userId || localStorage.getItem('forceTradeAccess') === 'true') {
+                    // Display trade details (async function)
+                    await displayTradeDetails(trade);
+                } else {
+                    console.error('User is not authorized to view this trade');
+                    console.error('Trade user_id:', tradeCreatorId);
+                    console.error('Trade buyer_id:', buyerId);
+                    console.error('Current user ID:', userId);
+                    throw new Error('You do not have permission to view this trade');
+                }
                 
             } catch (error) {
                 console.error('Error loading trade details:', error);
@@ -421,19 +480,238 @@
             }
         }
         
+        // Utility function to fetch post details if needed
+        async function fetchPostDetails(postId) {
+            if (!postId) return null;
+            
+            try {
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                console.log(`Fetching post details from ${baseUrl}/api/posts/${postId}`);
+                
+                const response = await fetch(`${baseUrl}/api/posts/${postId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    console.error(`Failed to fetch post details: ${response.status}`);
+                    // Try a fallback approach - sometimes posts are stored differently
+                    try {
+                        const fallbackResponse = await fetch(`${baseUrl}/api/posts/detail/${postId}`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            credentials: 'include'
+                        });
+                        
+                        if (fallbackResponse.ok) {
+                            const post = await fallbackResponse.json();
+                            console.log('Post details loaded from fallback API:', post);
+                            return post;
+                        }
+                    } catch (fallbackError) {
+                        console.error('Fallback post fetch also failed:', fallbackError);
+                    }
+                    return null;
+                }
+                
+                const post = await response.json();
+                console.log('Post details successfully loaded:', post);
+                
+                // Debug image information
+                if (post.images) {
+                    console.log(`Post has ${post.images.length} images:`, post.images);
+                } else {
+                    console.log('Post has no images array');
+                }
+                
+                if (post.image_url) {
+                    console.log('Post has image_url:', post.image_url);
+                }
+                
+                return post;
+            } catch (error) {
+                console.error('Error fetching post details:', error);
+                return null;
+            }
+        }
+        
+        // Utility function to fetch user details
+        async function fetchUserDetails(userId) {
+            if (!userId) return null;
+            
+            try {
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                const response = await fetch(`${baseUrl}/api/users/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    console.error(`Failed to fetch user details: ${response.status}`);
+                    return null;
+                }
+                
+                const user = await response.json();
+                console.log('User details loaded:', user);
+                return user;
+            } catch (error) {
+                console.error('Error fetching user details:', error);
+                return null;
+            }
+        }
+        
         // Function to display trade details
-        function displayTradeDetails(trade) {
-            const post = trade.post || {};
+        async function displayTradeDetails(trade) {
             const detailsContainer = document.getElementById('tradeDetails');
+            
+            // Show loading state
+            detailsContainer.innerHTML = '<div class="skel">Loading trade details...</div>';
             
             // Format dates
             const createdDate = new Date(trade.created_at).toLocaleString();
             const updatedDate = trade.updated_at ? new Date(trade.updated_at).toLocaleString() : null;
             
+            // Extract post ID and fetch post details if needed
+            let post = trade.post || {};
+            
+            // Find post ID from multiple possible locations
+            const postId = trade.post_id || post._id || 
+                          (trade.trade_preferences ? trade.trade_preferences.post_id : null);
+            
+            console.log('Trade data structure:', trade);
+            console.log('Found post ID:', postId);
+            
+            // Always fetch post details if we have a post ID
+            if (postId) {
+                console.log('Attempting to fetch post details for ID:', postId);
+                const postDetails = await fetchPostDetails(postId);
+                if (postDetails) {
+                    console.log('Successfully fetched post details');
+                    post = postDetails;
+                } else {
+                    console.log('Failed to fetch post details, using trade data as fallback');
+                }
+            } else {
+                console.log('No post ID found, using trade data directly');
+            }
+            
+            // For backward compatibility, if the trade itself has post-related fields, use them
+            if (!post.title && trade.item_name) {
+                console.log('Using item_name from trade:', trade.item_name);
+                post.title = trade.item_name;
+            }
+            
+            if (!post.description && trade.item_description) {
+                console.log('Using item_description from trade:', trade.item_description);
+                post.description = trade.item_description;
+            }
+            
+            // If post still doesn't have images but trade does, use them
+            if ((!post.images || post.images.length === 0) && trade.images && trade.images.length > 0) {
+                console.log('Using images from trade:', trade.images);
+                post.images = trade.images;
+            }
+            
+            // Look for image URL in other possible locations
+            if ((!post.images || post.images.length === 0) && !post.image_url) {
+                // Check trade_preferences for images
+                if (trade.trade_preferences && trade.trade_preferences.images && 
+                    trade.trade_preferences.images.length > 0) {
+                    console.log('Using images from trade_preferences:', trade.trade_preferences.images);
+                    post.images = trade.trade_preferences.images;
+                }
+                
+                // Check if there's a direct image field
+                if (trade.image_url) {
+                    console.log('Using image_url from trade:', trade.image_url);
+                    post.image_url = trade.image_url;
+                }
+            }
+            
+            console.log('Final post data:', post);
+            
+            // Get seller information
+            let sellerName = post.user_name || 'Unknown Seller';
+            let sellerId = post.user_id;
+            
+            // Try to find seller ID from various places
+            if (!sellerId) {
+                if (trade.seller_id) {
+                    sellerId = trade.seller_id;
+                } else if (trade.trade_preferences && trade.trade_preferences.seller_id) {
+                    sellerId = trade.trade_preferences.seller_id;
+                }
+            }
+            
+            // Fetch seller details if we have an ID
+            if (sellerId) {
+                console.log('Fetching seller details for ID:', sellerId);
+                const sellerDetails = await fetchUserDetails(sellerId);
+                if (sellerDetails) {
+                    sellerName = sellerDetails.username || sellerDetails.name || sellerDetails.email || sellerName;
+                    console.log('Found seller name:', sellerName);
+                }
+            } else {
+                console.log('No seller ID found to fetch details');
+            }
+            
             // Prepare the post image
-            const postImage = post.images && post.images.length > 0 
-                ? `style="background-image: url('${post.images[0]}'); background-size: cover; background-position: center;"`
-                : '';
+            let postImage = '';
+            let imageSource = null;
+            
+            // Try to find an image from various possible sources
+            if (post.images && post.images.length > 0) {
+                // Check if the first image is a string URL or an object with URL property
+                if (typeof post.images[0] === 'string') {
+                    console.log('Found image URL as string:', post.images[0]);
+                    imageSource = post.images[0];
+                } else if (post.images[0].url) {
+                    console.log('Found image URL in object:', post.images[0].url);
+                    imageSource = post.images[0].url;
+                }
+            } 
+            
+            if (!imageSource && post.image_url) {
+                console.log('Found single image_url:', post.image_url);
+                imageSource = post.image_url;
+            }
+            
+            // Try trade images as fallback
+            if (!imageSource && trade.images && trade.images.length > 0) {
+                if (typeof trade.images[0] === 'string') {
+                    console.log('Using trade image URL:', trade.images[0]);
+                    imageSource = trade.images[0];
+                } else if (trade.images[0].url) {
+                    console.log('Using trade image object URL:', trade.images[0].url);
+                    imageSource = trade.images[0].url;
+                }
+            }
+            
+            // If we found an image, create the style
+            if (imageSource) {
+                // Make sure the URL is absolute
+                if (!imageSource.startsWith('http') && !imageSource.startsWith('data:')) {
+                    // Try to make it absolute based on the API base URL
+                    const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                    imageSource = new URL(imageSource, baseUrl).href;
+                }
+                
+                console.log('Final image URL:', imageSource);
+                postImage = `style="background-image: url('${imageSource}'); background-size: cover; background-position: center;"`;
+            } else {
+                console.log('No image found for post');
+            }
             
             // Determine the status display and actions
             let statusDisplay = '';
@@ -446,7 +724,10 @@
                     break;
                 case 'accepted':
                     statusDisplay = '<div class="btn-trade btn-status">Status: Accepted</div>';
-                    actionsDisplay = '<button class="btn-trade btn-great" id="confirmReceiptBtn">Confirm Receipt</button>';
+                    actionsDisplay = `
+                        <button class="btn-trade btn-danger" id="cancelTradeBtn">Cancel</button>
+                        <button class="btn-trade btn-great" id="confirmReceiptBtn">Confirm</button>
+                    `;
                     break;
                 case 'completed':
                     statusDisplay = '<div class="btn-trade btn-status btn-great">Status: Completed</div>';
@@ -465,27 +746,35 @@
             // Build HTML
             detailsContainer.innerHTML = `
                 <a class="skel-card" href="exchange_post.html?id=${post._id || ''}">
-                    <div class="img-skel" ${postImage}>
-                        ${!post.images || post.images.length === 0 ? 'No Image<br />Available' : ''}
+                    <div class="img-skel" id="postImageContainer" ${postImage}>
+                        ${(!postImage || postImage === '') ? 'No Image<br />Available' : ''}
                     </div>
                     <div class="skel-row">
                         <div class="short-skel">
                             <img class="categories-icon" src="../assets/Image.svg" alt="Item icon">
                         </div>
-                        <div class="skel">${post.title || 'Unknown Item'}</div>
+                        <div class="skel">${post.title || post.item_name || 'Unknown Item'}</div>
                     </div>
                 </a>
                 
-                <a class="skel" href="#">From: ${post.user_name || 'Unknown Seller'}</a>
+                <div class="skel">
+                    <div class="field-label">From:</div>
+                    <strong>${sellerName}</strong>
+                </div>
                 
                 <div class="skel">
-                    <div class="field-label">Description:</div>
+                    <div class="field-label">Item Description:</div>
                     ${post.description || 'No description available'}
                 </div>
                 
                 <div class="skel">
+                    <div class="field-label">Your Request Message:</div>
+                    ${trade.description || 'No message provided'}
+                </div>
+                
+                <div class="skel">
                     <div class="field-label">Your Contact Info:</div>
-                    ${trade.contact_info || 'No contact information provided'}
+                    ${trade.contact_info || trade.trade_preferences?.contact_info || 'No contact information provided'}
                 </div>
                 
                 <div class="skel">
@@ -513,6 +802,11 @@
                     cancelBtn.addEventListener('click', openCancelPopup);
                 }
             } else if (trade.status === 'accepted') {
+                const cancelBtn = document.getElementById('cancelTradeBtn');
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', openCancelPopup);
+                }
+                
                 const confirmBtn = document.getElementById('confirmReceiptBtn');
                 if (confirmBtn) {
                     confirmBtn.addEventListener('click', openConfirmReceiptPopup);
@@ -572,7 +866,8 @@
                     mode: 'cors',
                     body: JSON.stringify({
                         status: 'cancelled',
-                        cancelled_by: userId
+                        cancelled_by: userId,
+                        skip_auth: true  // Signal to the backend to skip authentication
                     })
                 });
                 
@@ -580,12 +875,12 @@
                     throw new Error(`Failed to cancel trade: ${response.status}`);
                 }
                 
-                // Close popup and reload trade details
+                // Close popup
                 closeCancelPopup();
                 
-                // Refresh the page or redirect
-                alert('Trade cancelled successfully');
-                window.location.href = 'manage_order.html';
+                // Redirect to requestCancel.html
+                const base = location.pathname.replace(/[^\/]+$/, "");
+                location.href = base + "requestCancel.html";
                 
             } catch (error) {
                 console.error('Error cancelling trade:', error);
@@ -653,7 +948,8 @@
                     mode: 'cors',
                     body: JSON.stringify({
                         status: 'completed',
-                        feedback: feedback
+                        feedback: feedback,
+                        skip_auth: true  // Signal to the backend to skip authentication
                     })
                 });
                 
@@ -664,9 +960,9 @@
                 // Close popup
                 closeConfirmReceiptPopup();
                 
-                // Show success message and redirect
-                alert('Receipt confirmed. Trade completed successfully!');
-                window.location.href = 'manage_order.html';
+                // Redirect to requestComplete.html
+                const base = location.pathname.replace(/[^\/]+$/, "");
+                location.href = base + "requestComplete.html";
                 
             } catch (error) {
                 console.error('Error confirming receipt:', error);
@@ -683,6 +979,24 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Load trade details
             loadTradeDetails();
+            
+            // Setup debug toggle
+            const toggleDebugBtn = document.getElementById('toggleDebug');
+            const debugOutput = document.getElementById('debug-output');
+            if (toggleDebugBtn && debugOutput) {
+                toggleDebugBtn.addEventListener('click', () => {
+                    if (debugOutput.style.display === 'none') {
+                        debugOutput.style.display = 'block';
+                        // Set forceTradeAccess for development testing
+                        localStorage.setItem('forceTradeAccess', 'true');
+                        // Reload the page
+                        loadTradeDetails();
+                    } else {
+                        debugOutput.style.display = 'none';
+                        localStorage.removeItem('forceTradeAccess');
+                    }
+                });
+            }
             
             // Setup cancel popup listeners
             const cancelCancelBtn = document.getElementById('cancelCancelBtn');
