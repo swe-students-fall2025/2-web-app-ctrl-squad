@@ -387,9 +387,51 @@
 
         <!-- Manage buttons -->
         <div class="manage-row">
-          <a class="btn-solid" href="profile_posts.html">Manage Posts</a>
-          <a class="btn-solid" href="manage_order.html">Manage Orders</a>
+          <a class="btn-solid" href="profile_posts.html" onclick="event.preventDefault(); checkAndNavigate('profile_posts.html')">Manage Posts</a>
+          <a class="btn-solid" href="manage_order.html" onclick="event.preventDefault(); checkAndNavigate('manage_order.html')">Manage Orders</a>
         </div>
+        
+        <script>
+          // Helper function to verify authentication and navigate
+          async function checkAndNavigate(destination) {
+            try {
+              // Store the URL for session consistency
+              localStorage.setItem('apiBaseUrl', 'http://127.0.0.1:5000');
+              
+              // Verify authentication before navigation
+              const response = await fetch('http://127.0.0.1:5000/api/users/profile', {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'Origin': window.location.origin
+                },
+                credentials: 'include',
+                mode: 'cors',
+                cache: 'no-store'
+              });
+
+              if (response.ok) {
+                // Get current user ID and store it
+                const userData = await response.json();
+                if (userData && userData.data && userData.data.id) {
+                  const userId = userData.data.id;
+                  localStorage.setItem('currentUserId', userId);
+                  console.log('Stored current user ID:', userId);
+                }
+                // Log success and navigate
+                console.log('Authentication successful, navigating to:', destination);
+                window.location.href = destination;
+              } else {
+                console.error('Authentication failed: response not OK');
+                window.location.href = 'login.html';
+              }
+            } catch (error) {
+              console.error('Auth check failed:', error);
+              window.location.href = 'login.html';
+            }
+          }
+        </script>
 
         <!-- posts -->
         <h3 class="section-title">Your Posts</h3>
@@ -443,13 +485,43 @@
           // Function to load and display user posts
           async function loadUserPosts() {
             try {
+              // First verify authentication
+              const authResponse = await fetch('http://127.0.0.1:5000/api/users/profile', {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'Origin': window.location.origin
+                },
+                credentials: 'include',
+                mode: 'cors',
+                cache: 'no-store'
+              });
+
+              if (!authResponse.ok) {
+                window.location.href = 'login.html';
+                return;
+              }
+
+              // Get user data
+              const userData = await authResponse.json();
+              const userId = userData.data._id;
+              
+              // Store user ID for session consistency
+              localStorage.setItem('currentUserId', userId);
+              localStorage.setItem('apiBaseUrl', 'http://127.0.0.1:5000');
+              
+              // Then fetch posts using the verified session
               const response = await fetch('http://127.0.0.1:5000/api/users/profile/posts', {
                 headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
                   'Content-Type': 'application/json',
-                  'Accept': 'application/json'
+                  'Accept': 'application/json',
+                  'Origin': window.location.origin,
+                  'X-User-ID': userId
                 },
-                credentials: 'include'
+                credentials: 'include',
+                mode: 'cors',
+                cache: 'no-store'
               });
               
               if (!response.ok) throw new Error('Failed to fetch posts');

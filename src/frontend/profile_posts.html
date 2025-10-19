@@ -28,9 +28,14 @@
                 <a class="btn block mt-2" href="additem.html">Create a post</a>
 
                 <script>
-                    async function loadPosts() {
+                    // Check authentication status first
+                    async function checkAuth() {
                         try {
-                            const response = await fetch('http://localhost:5000/api/users/profile/posts', {
+                            // Use consistent URL (same as profile.html)
+                            const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                            console.log('Using API base URL:', baseUrl);
+                            
+                            const response = await fetch(`${baseUrl}/api/users/profile`, {
                                 method: 'GET',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -41,8 +46,77 @@
                                 mode: 'cors',
                                 cache: 'no-store'
                             });
+                            
+                            console.log('Auth response status:', response.status);
 
                             if (response.status === 401 || response.status === 403) {
+                                console.error('Authentication failed:', response.status);
+                                window.location.href = 'login.html';
+                                return false;
+                            }
+
+                            if (!response.ok) {
+                                throw new Error('Failed to verify authentication');
+                            }
+                            
+                            // Get the user data to maintain session consistency
+                            const userData = await response.json();
+                            console.log('User data received:', userData);
+                            
+                            // Use data.id which is the format returned by the API
+                            return userData.data.id;
+                        } catch (error) {
+                            console.error('Auth check failed:', error);
+                            window.location.href = 'login.html';
+                            return false;
+                        }
+                    }
+
+                    async function loadPosts() {
+                        try {
+                            // First verify authentication and get user ID
+                            const userId = await checkAuth();
+                            if (!userId) {
+                                console.error('Failed to get authenticated user ID');
+                                window.location.href = 'login.html';
+                                return;
+                            }
+                            
+                            console.log('Authenticated user ID:', userId);
+                            
+                            // Use consistent URL from localStorage or fallback
+                            const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                            console.log('Using API base URL:', baseUrl);
+                            
+                            // Create headers object with proper user ID
+                            const headers = {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'Origin': window.location.origin,
+                                'Cache-Control': 'no-cache'
+                            };
+                            
+                            // Only add X-User-ID if we have a valid value (not undefined or null)
+                            if (userId && userId !== 'undefined' && userId !== 'null') {
+                                headers['X-User-ID'] = userId;
+                                console.log('Setting X-User-ID header:', userId);
+                            } else {
+                                console.warn('Not setting X-User-ID header due to invalid value:', userId);
+                            }
+                            
+                            console.log('Fetching user posts with headers:', headers);
+                            const response = await fetch(`${baseUrl}/api/users/profile/posts`, {
+                                method: 'GET',
+                                headers: headers,
+                                credentials: 'include',
+                                mode: 'cors',
+                                cache: 'no-store'
+                            });
+
+                            console.log('Response status:', response.status);
+                            
+                            if (response.status === 401 || response.status === 403) {
+                                console.error('Authentication error:', response.status);
                                 window.location.href = 'login.html';
                                 return;
                             }
@@ -52,15 +126,18 @@
                             }
 
                             const data = await response.json();
+                            console.log('Posts data:', data);
+                            
                             if (data.success) {
                                 displayPosts(data.posts);
                             } else {
                                 throw new Error(data.error || 'Failed to fetch posts');
                             }
                         } catch (error) {
-                            console.error('Error:', error);
+                            console.error('Error loading posts:', error);
                             document.querySelector('.list').innerHTML = `
-                                <p class="error">Failed to load posts. Please try again.</p>
+                                <p class="error">Failed to load posts: ${error.message}</p>
+                                <button class="btn" onclick="loadPosts()">Try Again</button>
                             `;
                         }
                     }
@@ -100,12 +177,19 @@
                                     <small class="text-muted">Posted: ${new Date(post.created_at).toLocaleDateString()}</small>
                                 </div>
                                 <div class="actions">
-                                    <a class="btn secondary" href="singlePost.html?id=${post._id}">View</a>
+                                    <a class="btn secondary" href="exchange_post.html?id=${post._id}">View</a>
                                     <button class="btn" onclick="editPost('${post._id}')">Edit</button>
                                     <button class="btn btn-danger" onclick="deletePost('${post._id}')">Delete</button>
                                 </div>
                             </article>
                         `).join('');
+                    }
+                    
+                    // Function to handle editing a post
+                    async function editPost(postId) {
+                        console.log('Editing post with ID:', postId);
+                        // Redirect to the edit page with the post ID
+                        window.location.href = `itemPost_edit.html?id=${postId}`;
                     }
 
                     async function deletePost(postId) {
@@ -114,14 +198,39 @@
                         }
 
                         try {
-                            const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+                            // First get the authenticated user ID for consistency
+                            const userId = await checkAuth();
+                            if (!userId) {
+                                console.error('Authentication failed for delete');
+                                window.location.href = 'login.html';
+                                return;
+                            }
+                            
+                            const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                            console.log('Using API base URL for delete:', baseUrl);
+                            
+                            // Create headers object with proper user ID
+                            const headers = {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'Origin': window.location.origin,
+                                'Cache-Control': 'no-cache'
+                            };
+                            
+                            // Only add X-User-ID if we have a valid value (not undefined or null)
+                            if (userId && userId !== 'undefined' && userId !== 'null') {
+                                headers['X-User-ID'] = userId;
+                                console.log('Setting X-User-ID header for delete:', userId);
+                            } else {
+                                console.warn('Not setting X-User-ID header for delete due to invalid value:', userId);
+                            }
+                            
+                            const response = await fetch(`${baseUrl}/api/posts/${postId}`, {
                                 method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                },
+                                headers: headers,
                                 credentials: 'include',
-                                mode: 'cors'
+                                mode: 'cors',
+                                cache: 'no-store'
                             });
 
                             if (response.status === 401 || response.status === 403) {
@@ -130,13 +239,14 @@
                             }
 
                             if (response.ok) {
+                                // Reload posts after successful deletion
                                 loadPosts();
                             } else {
                                 const data = await response.json();
                                 alert(data.error || 'Failed to delete post');
                             }
                         } catch (error) {
-                            console.error('Error:', error);
+                            console.error('Error deleting post:', error);
                             alert('Failed to delete post. Please try again.');
                         }
                     }

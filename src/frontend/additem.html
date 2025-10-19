@@ -171,7 +171,7 @@
       </div>
 
       <!-- image input -->
-      <form id="postForm" class="form" action="http://localhost:5000/api/posts" method="post">
+      <form id="postForm" class="form" action="http://127.0.0.1:5000/api/posts" method="post">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
           <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
           Insert Image
@@ -264,6 +264,57 @@ function smartBack() {
   <!-- insert image -->
   <script>
     (function () {
+      // Verify authentication when page loads
+      async function checkAuth() {
+        try {
+          const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+          console.log('Using API base URL:', baseUrl);
+          
+          const response = await fetch(`${baseUrl}/api/users/profile`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Origin': window.location.origin
+            },
+            credentials: 'include',
+            mode: 'cors',
+            cache: 'no-store'
+          });
+          
+          if (response.status === 401 || response.status === 403) {
+            console.error('Authentication failed:', response.status);
+            window.location.href = 'login.html';
+            return false;
+          }
+          
+          if (!response.ok) {
+            throw new Error('Failed to verify authentication');
+          }
+          
+          // Get the user data and store user ID
+          const userData = await response.json();
+          console.log('User data received:', userData);
+          
+          if (userData && userData.data && userData.data.id) {
+            const userId = userData.data.id;
+            localStorage.setItem('currentUserId', userId);
+            console.log('Stored current user ID:', userId);
+            return true;
+          } else {
+            console.error('Invalid user data format:', userData);
+            throw new Error('Invalid user data format');
+          }
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          window.location.href = 'login.html';
+          return false;
+        }
+      }
+      
+      // Check auth when page loads
+      document.addEventListener('DOMContentLoaded', checkAuth);
+      
       const dropzone = document.getElementById('dropzone');
       const fileInput = document.getElementById('imageInput');
       const form = document.getElementById('postForm');
@@ -353,13 +404,29 @@ function smartBack() {
         try {
           console.log('Sending post data:', postData); // Debug log
 
-          const response = await fetch('http://localhost:5000/api/posts', {
+          // Use consistent API base URL
+          const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+          
+          // Get the current user ID from localStorage
+          const userId = localStorage.getItem('currentUserId');
+          console.log('Current user ID for post creation:', userId);
+          
+          // Prepare headers
+          const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': window.location.origin
+          };
+          
+          // Add X-User-ID header if we have a valid value
+          if (userId && userId !== 'undefined' && userId !== 'null') {
+            headers['X-User-ID'] = userId;
+            console.log('Added X-User-ID header:', userId);
+          }
+          
+          const response = await fetch(`${baseUrl}/api/posts`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Origin': window.location.origin
-            },
+            headers: headers,
             credentials: 'include',
             mode: 'cors',
             body: JSON.stringify(postData)
@@ -377,12 +444,24 @@ function smartBack() {
 
           // Check if we have a 201 status but no success flag (backward compatibility)
           if (response.status === 201) {
+            console.log('Post created successfully', data);
+            // Store the post owner ID for session consistency
+            if (data.post && data.post.user_id) {
+              localStorage.setItem('currentUserId', data.post.user_id);
+              console.log('Stored post owner ID:', data.post.user_id);
+            }
             alert('Item posted successfully!');
             window.location.href = 'profile_posts.html';
             return;
           }
 
           if (data.success) {
+            console.log('Post created successfully', data);
+            // Store the post owner ID for session consistency
+            if (data.post && data.post.user_id) {
+              localStorage.setItem('currentUserId', data.post.user_id);
+              console.log('Stored post owner ID:', data.post.user_id);
+            }
             alert('Item posted successfully!');
             window.location.href = 'profile_posts.html';
           } else {

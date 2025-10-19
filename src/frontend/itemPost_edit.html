@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>🏡 CasaConnect — Add item post</title>
+  <title>🏡 CasaConnect — Edit item post</title>
   <link rel="stylesheet" href="common_style.css">
   <style>
 
@@ -165,7 +165,7 @@
       </div>
       
       <!-- image input -->
-      <form id="postForm" class="form" action="http://localhost:5000/api/posts" method="post">
+      <form id="postForm" class="form" action="http://127.0.0.1:5000/api/posts" method="post">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">
           <img class="dropzone-icon" src="../assets/Image.svg" alt="upload icon">
           Insert Image
@@ -173,12 +173,12 @@
         <input id="imageInput" type="file" name="images" accept="image/*" hidden multiple />
         <!-- post parameters -->
         <div class="label">Title</div>
-        <input class="input" type="text" name="title" placeholder="Add title..." required />
+        <input class="input" type="text" id="title" name="title" placeholder="Add title..." required />
 
 
         <div class="label">Type</div>
         <div class="select-wrap">
-          <select name="type" aria-label="Type" required>
+          <select name="type" id="type" aria-label="Type" required>
             <option value="" disabled selected>Choose type</option>
             <option value="free">Free</option>
             <option value="exchange">Exchange</option>
@@ -188,7 +188,7 @@
 
         <div class="label">Location</div>
         <div class="select-wrap">
-          <select name="location" aria-label="Location" required>
+          <select name="location" id="location" aria-label="Location" required>
             <option value="" disabled selected>Choose location</option>
             <option>On campus Brooklyn</option>
             <option>On campus Manhattan</option>
@@ -200,7 +200,7 @@
 
         <div class="label">Choose category</div>
         <div class="select-wrap">
-          <select name="category" aria-label="Choose category" required>
+          <select name="category" id="category" aria-label="Choose category" required>
             <option value="" disabled selected>Choose category</option>
             <option>Textbooks</option>
             <option>Furniture</option>
@@ -210,9 +210,25 @@
           </select>
           <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
         </div>
+        
+        <div class="label">Condition</div>
+        <div class="select-wrap">
+          <select name="condition" id="condition" aria-label="Condition" required>
+            <option value="" disabled selected>Select condition</option>
+            <option value="new">New</option>
+            <option value="like-new">Like New</option>
+            <option value="good">Good</option>
+            <option value="fair">Fair</option>
+            <option value="used">Used</option>
+          </select>
+          <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
+        </div>
+        
+        <div class="label">Price (optional)</div>
+        <input class="input" type="number" id="price" name="price" placeholder="Enter price" min="0" step="0.01" />
 
         <div class="label">Add description...</div>
-        <textarea class="textarea" name="description" placeholder="Add description..." required></textarea>
+        <textarea class="textarea" id="description" name="description" placeholder="Add description..." required></textarea>
 
         <div class="actions">
           <button class="btn btn-post" type="submit"><span>Update Post</span></button>
@@ -258,6 +274,201 @@ function smartBack() {
   <!-- insert image -->
   <script>
     (function () {
+      // Get the post ID from the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const postId = urlParams.get('id');
+      let currentPostData = null;
+      
+      if (!postId) {
+        alert('No post ID provided. Redirecting to profile page.');
+        window.location.href = 'profile.html';
+      }
+      
+      // Function to load post data
+      async function loadPostData() {
+        try {
+          // Verify authentication first
+          const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+          
+          // Authenticate and get user ID
+          const authResponse = await fetch(`${baseUrl}/api/users/profile`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Origin': window.location.origin
+            },
+            credentials: 'include',
+            mode: 'cors',
+            cache: 'no-store'
+          });
+          
+          if (authResponse.status === 401 || authResponse.status === 403) {
+            console.error('Authentication failed');
+            window.location.href = 'login.html';
+            return;
+          }
+          
+          if (!authResponse.ok) {
+            throw new Error('Failed to verify authentication');
+          }
+          
+          const userData = await authResponse.json();
+          const userId = userData.data.id;
+          console.log('User authenticated, ID:', userId);
+          
+          // Fetch the post data
+          console.log(`Fetching post data for ID: ${postId}`);
+          const postResponse = await fetch(`${baseUrl}/api/posts/${postId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Origin': window.location.origin,
+              'X-User-ID': userId
+            },
+            credentials: 'include',
+            mode: 'cors',
+            cache: 'no-store'
+          });
+          
+          if (!postResponse.ok) {
+            throw new Error(`Failed to fetch post data: ${postResponse.status}`);
+          }
+          
+          const post = await postResponse.json();
+          console.log('Post data loaded:', post);
+          
+          // Store post data for later use
+          currentPostData = post;
+          
+          // Check if the post belongs to the current user
+          if (post.user_id !== userId) {
+            alert("You don't have permission to edit this post.");
+            window.location.href = 'profile_posts.html';
+            return;
+          }
+          
+          // Update form action to use the PUT endpoint
+          form.action = `${baseUrl}/api/posts/${postId}`;
+          
+          console.log('Populating form fields with post data:', post);
+          
+          // Populate form fields with safe element checks
+          const titleEl = document.getElementById('title');
+          if (titleEl) titleEl.value = post.title || '';
+          
+          const descriptionEl = document.getElementById('description');
+          if (descriptionEl) descriptionEl.value = post.description || '';
+          
+          // Handle category selection
+          if (post.category) {
+            const categorySelect = document.getElementById('category');
+            if (categorySelect) {
+              try {
+                const options = Array.from(categorySelect.options);
+                const optionToSelect = options.find(item => item.value === post.category);
+                if (optionToSelect) {
+                  categorySelect.selectedIndex = optionToSelect.index;
+                }
+              } catch (err) {
+                console.error('Error setting category:', err);
+              }
+            }
+          }
+          
+          // Handle condition selection
+          if (post.condition) {
+            const conditionSelect = document.getElementById('condition');
+            if (conditionSelect) {
+              try {
+                const options = Array.from(conditionSelect.options);
+                const optionToSelect = options.find(item => item.value === post.condition);
+                if (optionToSelect) {
+                  conditionSelect.selectedIndex = optionToSelect.index;
+                }
+              } catch (err) {
+                console.error('Error setting condition:', err);
+              }
+            }
+          }
+          
+          // Handle price field
+          if (post.price) {
+            const priceEl = document.getElementById('price');
+            if (priceEl) priceEl.value = post.price;
+          }
+          
+          // Handle type selection
+          if (post.type) {
+            const typeSelect = document.getElementById('type');
+            if (typeSelect) {
+              try {
+                const options = Array.from(typeSelect.options);
+                const optionToSelect = options.find(item => item.value === post.type);
+                if (optionToSelect) {
+                  typeSelect.selectedIndex = optionToSelect.index;
+                }
+              } catch (err) {
+                console.error('Error setting type:', err);
+              }
+            }
+          }
+          
+          // Handle location selection
+          if (post.location) {
+            const locationSelect = document.getElementById('location');
+            if (locationSelect) {
+              try {
+                const options = Array.from(locationSelect.options);
+                const optionToSelect = options.find(item => item.textContent === post.location);
+                if (optionToSelect) {
+                  locationSelect.selectedIndex = optionToSelect.index;
+                }
+              } catch (err) {
+                console.error('Error setting location:', err);
+              }
+            }
+          }
+          
+          // Handle images if present
+          if (post.images && post.images.length > 0) {
+            try {
+              dropzone.classList.add('preview');
+              dropzone.innerHTML = `
+                <img src="${post.images[0]}" alt="preview" style="width:100%;height:100%;object-fit:cover;border-radius:8px"/>
+                <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
+              `;
+              
+              dropzone.querySelector('.remove-btn').addEventListener('click', () => {
+                dropzone.classList.remove('preview');
+                dropzone.innerHTML = 'Insert Image';
+                fileInput.value = '';
+              });
+            } catch (err) {
+              console.error('Error setting image preview:', err);
+            }
+          }
+          
+          // Update submit button text
+          try {
+            const submitButton = document.querySelector('.btn-post span');
+            if (submitButton) submitButton.textContent = 'Update Post';
+          } catch (err) {
+            console.error('Error updating button text:', err);
+          }
+          
+          console.log('Post data loaded successfully');
+          
+        } catch (error) {
+          console.error('Error loading post data:', error);
+          alert('Failed to load post data: ' + error.message);
+        }
+      }
+      
+      // Load post data when page loads
+      document.addEventListener('DOMContentLoaded', loadPostData);
+      
       const dropzone = document.getElementById('dropzone');
       const fileInput = document.getElementById('imageInput');
       const form = document.getElementById('postForm');
@@ -306,6 +517,14 @@ function smartBack() {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        // Get post ID from URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const postId = params.get('id');
+        if (!postId) {
+          alert('Missing post ID. Cannot update the item.');
+          return;
+        }
+        
         // Get form data
         const formData = new FormData(form);
         const images = fileInput.files;
@@ -323,42 +542,65 @@ function smartBack() {
               reader.readAsDataURL(images[i]);
             });
           }
+        } else if (currentPostData && currentPostData.images && currentPostData.images.length > 0) {
+          // Keep existing images if no new ones uploaded
+          imageUrls.push(...currentPostData.images);
         }
 
+        // Get the condition and other fields from the form or use existing values
+        const condition = document.getElementById('condition') ? 
+                         formData.get('condition') : 
+                         (currentPostData.condition || 'used');
+        
         // Prepare the post data
         const postData = {
           title: formData.get('title'),
           description: formData.get('description'),
           categories: [formData.get('category')],
           images: imageUrls,
-          exchange_type: "trade", // You can add a field for this if needed
-          condition: "used", // You can add a field for this if needed
-          location: "On Campus" // You can add a field for this if needed
+          exchange_type: currentPostData.exchange_type || "trade",
+          condition: condition,
+          location: currentPostData.location || "On Campus"
         };
 
         try {
-          const response = await fetch(form.action, {
-            method: 'POST',
+          // Get authenticated user ID from localStorage or from the currentPostData
+          const userId = localStorage.getItem('currentUserId') || currentPostData.user_id;
+          
+          // Use PUT method for updating with the correct endpoint
+          const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+          const response = await fetch(`${baseUrl}/api/posts/${postId}`, {
+            method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Origin': window.location.origin,
+              'X-User-ID': userId || ''
             },
+            credentials: 'include',
+            mode: 'cors',
             body: JSON.stringify(postData)
           });
 
+          if (response.status === 401) {
+            window.location.href = 'login.html';
+            return;
+          }
+
           if (!response.ok) {
-            throw new Error('Failed to create post');
+            throw new Error('Failed to update post');
           }
 
           const data = await response.json();
           if (data.success) {
-            alert('Item posted successfully!');
-            location.href = 'postconfirm.html';
+            alert('Item updated successfully!');
+            window.location.href = 'profile_posts.html';
           } else {
-            throw new Error(data.error || 'Failed to create post');
+            throw new Error(data.error || 'Failed to update post');
           }
         } catch (error) {
-          console.error('Error:', error);
-          alert('Failed to create post. Please try again later.');
+          console.error('Error updating post:', error);
+          alert(error.message || 'Failed to update post. Please try again later.');
         }
       });
     })();

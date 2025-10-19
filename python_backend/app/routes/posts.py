@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response, session
 from flask_login import login_required, current_user
 from app.models.post import Post
 
@@ -31,6 +31,10 @@ def get_posts():
 @login_required
 def create_post():
     print("Creating new post...")
+    print(f"Session: {session}")
+    print(f"Current user: {current_user.id if current_user else 'No current user'}")
+    print(f"Headers: {dict(request.headers)}")
+    
     data = request.get_json()
     print("Received data:", data)
     
@@ -39,9 +43,21 @@ def create_post():
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
     
     try:
-        print(f"Creating post for user: {current_user.id}")
+        # Check if we should use a different user ID from the header
+        user_id = current_user.id  # Default to the session user
+        user_id_header = request.headers.get('X-User-ID')
+        
+        if user_id_header:
+            print(f"X-User-ID header present: {user_id_header}")
+            if user_id_header != str(user_id):
+                print(f"Warning: X-User-ID header ({user_id_header}) doesn't match session user ({user_id})")
+                print("Using session user ID for consistency")
+        else:
+            print("No X-User-ID header present, using session user")
+        
+        print(f"Creating post for user: {user_id}")
         post = Post.create_post(
-            user_id=current_user.id,
+            user_id=user_id,
             title=data['title'],
             description=data['description'],
             type=data.get('type', 'item'),
@@ -75,19 +91,51 @@ def get_post(post_id):
     
     return jsonify(post), 200
 
-@bp.route('/users/profile/posts', methods=['GET'])
+@bp.route('/users/profile/posts', methods=['GET', 'OPTIONS'])
 @login_required
 def get_user_posts():
+    # Handle OPTIONS request for CORS preflight
+    if request.method == 'OPTIONS':
+        response = make_response()
+        origin = request.headers.get('Origin')
+        response.headers.update({
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, X-User-ID, Authorization, Origin, Accept, Cache-Control',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Max-Age': '3600'
+        })
+        return response
+        
     try:
+        # Log request information for debugging
+        print(f"GET /users/profile/posts request received")
+        print(f"Headers: {dict(request.headers)}")
+        print(f"Session: {session}")
+        print(f"Cookie: {request.cookies}")
+        
+        # Check auth and get user_id
         if not current_user.is_authenticated:
+            print(f"User not authenticated")
             return jsonify({'error': 'User not authenticated'}), 401
 
-        if not current_user.id:
-            return jsonify({'error': 'Invalid user session'}), 401
-
+        # Check if the user ID header matches the session user
+        user_id_header = request.headers.get('X-User-ID')
+        if user_id_header:
+            if user_id_header == 'undefined' or user_id_header == 'null' or not user_id_header.strip():
+                print(f"Invalid X-User-ID header: {user_id_header}")
+                print("Continuing with session user ID")
+            elif user_id_header != str(current_user.id):
+                print(f"Warning: X-User-ID header ({user_id_header}) doesn't match session user ({current_user.id})")
+                print("Continuing with session user")
+        else:
+            print("No X-User-ID header present, using session user")
+            
         print(f"Fetching posts for user: {current_user.id}")
         # Get posts for the current logged-in user
         posts = Post.get_posts_by_user(current_user.id)
+        
+        # Ensure consistent format with users.py endpoint
         return jsonify({
             "success": True,
             "posts": posts
@@ -103,6 +151,17 @@ def get_user_posts():
 @login_required
 def delete_post(post_id):
     try:
+        # Check if we have an X-User-ID header
+        user_id_header = request.headers.get('X-User-ID')
+        if user_id_header:
+            if user_id_header == 'undefined' or user_id_header == 'null':
+                print(f"Invalid X-User-ID header in delete_post: {user_id_header}")
+                # Continue using session user
+            else:
+                print(f"Using X-User-ID header: {user_id_header}")
+        else:
+            print(f"No X-User-ID header, using session user")
+        
         # First get the post to verify ownership
         post = Post.get_by_id(post_id)
         if not post:
@@ -113,6 +172,7 @@ def delete_post(post_id):
 
         # Verify that the current user owns this post
         if str(post['user_id']) != current_user.id:
+            print(f"Authorization failure - post owner: {post['user_id']}, current user: {current_user.id}")
             return jsonify({
                 'success': False,
                 'error': 'Not authorized to delete this post'
