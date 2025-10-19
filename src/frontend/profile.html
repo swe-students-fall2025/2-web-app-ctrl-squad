@@ -433,6 +433,13 @@
           }
         </script>
 
+        <!-- Trade Requests -->
+        <h3 class="section-title">Incoming Trade Requests</h3>
+        <div id="incomingTrades">
+          <!-- Incoming trades will be loaded here -->
+          <p class="muted">Loading trade requests...</p>
+        </div>
+
         <!-- posts -->
         <h3 class="section-title">Your Posts</h3>
         <div id="userPosts">
@@ -572,7 +579,154 @@
           }
 
           // Load posts when the page loads
-          document.addEventListener('DOMContentLoaded', loadUserPosts);
+          // Function to load incoming trade requests (where user is the seller)
+          async function loadIncomingTrades() {
+            try {
+              const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+              const userId = localStorage.getItem('currentUserId');
+              
+              if (!userId) {
+                console.error('User ID not found');
+                document.getElementById('incomingTrades').innerHTML = '<p class="muted">Please log in to see trade requests</p>';
+                return;
+              }
+              
+              // First, fetch user's posts to get their post IDs
+              const postsResponse = await fetch(`${baseUrl}/api/users/profile/posts`, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'X-User-ID': userId
+                },
+                credentials: 'include'
+              });
+              
+              if (!postsResponse.ok) {
+                throw new Error(`Failed to fetch user posts: ${postsResponse.status}`);
+              }
+              
+              const postsData = await postsResponse.json();
+              const userPostIds = postsData.posts.map(post => post._id);
+              
+              console.log('User post IDs:', userPostIds);
+              
+              // If user has no posts, exit early
+              if (userPostIds.length === 0) {
+                document.getElementById('incomingTrades').innerHTML = '<p class="muted">You have no posts yet</p>';
+                return;
+              }
+              
+              // Now fetch all trades
+              const response = await fetch(`${baseUrl}/api/trades`, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'X-User-ID': userId
+                },
+                credentials: 'include'
+              });
+              
+              if (!response.ok) {
+                throw new Error(`Failed to fetch trades: ${response.status}`);
+              }
+              
+              const trades = await response.json();
+              console.log('All trades:', trades);
+              
+              // Filter trades where:
+              // 1. The trade is for a post that this user owns (using post IDs from user's posts)
+              // 2. The trade status is pending
+              const incomingTrades = trades.filter(trade => {
+                // Get post ID from trade preferences
+                const tradePrefs = trade.trade_preferences || {};
+                const tradePostId = tradePrefs.post_id;
+                
+                console.log('Checking trade:', trade);
+                console.log('Trade post ID:', tradePostId);
+                
+                if (!tradePostId) {
+                  console.log('Trade has no post ID');
+                  return false;
+                }
+                
+                // Check if this trade is for one of the user's posts
+                // Convert both IDs to strings for comparison
+                const isUserPost = userPostIds.some(postId => {
+                  const userPostIdStr = String(postId);
+                  const tradePostIdStr = String(tradePostId);
+                  
+                  const matches = userPostIdStr === tradePostIdStr;
+                  if (matches) {
+                    console.log('Found matching post ID:', userPostIdStr, 'for trade:', trade._id);
+                  }
+                  return matches;
+                });
+                
+                const result = isUserPost && (trade.status === 'pending' || trade.status === 'open');
+                console.log('Including trade in results?', result);
+                
+                // Include pending or open trades for user's posts
+                return result;
+              });
+              
+              console.log('Incoming trades:', incomingTrades);
+              
+              if (incomingTrades.length === 0) {
+                document.getElementById('incomingTrades').innerHTML = '<p class="muted">No incoming trade requests</p>';
+                return;
+              }
+              
+              // Process each trade to create HTML
+              const tradesHTML = await Promise.all(incomingTrades.map(async trade => {
+                try {
+                  // Extract post info
+                  const postId = trade.trade_preferences?.post_id || '';
+                  const postTitle = trade.trade_preferences?.post_title || 'Trade Request';
+                  let buyerName = trade.trade_preferences?.buyer_name || 'Someone';
+                  
+                  // Format created date
+                  const createdDate = trade.created_at ? 
+                    new Date(trade.created_at).toLocaleDateString() : 
+                    (trade.time_initiated ? new Date(trade.time_initiated).toLocaleDateString() : 'Recently');
+                  
+                  return `
+                  <article class="post">
+                    <div class="post-head">
+                      <div class="skel-input">${postTitle}</div>
+                      <a class="badge btn-notice" href="seller_trade_page.html?id=${trade._id}">View Request</a>
+                    </div>
+                    <div class="post-body">
+                      <div class="meta">
+                        <div class="skel-chip">From: ${buyerName}</div>
+                        <div class="skel-chip">Requested: ${createdDate}</div>
+                        <div class="skel-chip">Status: ${trade.status || 'pending'}</div>
+                      </div>
+                    </div>
+                  </article>
+                  `;
+                } catch (error) {
+                  console.error('Error processing trade:', error);
+                  return `<div class="muted">Error loading trade: ${error.message}</div>`;
+                }
+              }));
+              
+              // Display the trades
+              document.getElementById('incomingTrades').innerHTML = tradesHTML.join('');
+              
+            } catch (error) {
+              console.error('Error loading incoming trades:', error);
+              document.getElementById('incomingTrades').innerHTML = 
+                `<p class="muted">Error loading trade requests: ${error.message}</p>`;
+            }
+          }
+          
+          // Load both user posts and incoming trades when page loads
+          document.addEventListener('DOMContentLoaded', () => {
+            loadUserPosts();
+            loadIncomingTrades();
+          });
         </script>
 
       </div>
