@@ -170,7 +170,7 @@
       </div>
 
       <!-- parameters -->
-      <form id="postForm" class="form" action="http://localhost:5000/api/roommates" method="post">
+      <form id="postForm" class="form" action="http://127.0.0.1:5000/api/roommates" method="post">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">Insert Image</div>
         <input id="imageInput" type="file" name="images" accept="image/*" hidden multiple />
 
@@ -295,7 +295,7 @@ function smartBack() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-      // disable button to prevent double submit
+
     const btn = form.querySelector('.btn-post');
     btn.disabled = true;
     btn.querySelector('span').textContent = 'Posting...';
@@ -305,7 +305,18 @@ function smartBack() {
       const title = (formData.get('title') || '').trim();
       const description = (formData.get('description') || '').trim();
       const location = (formData.get('place_to_live') || '').trim();
-      const year = formData.get('year');
+      const rawYear = String(formData.get('year') || '').trim();
+      // normalize comma decimal to dot decimal
+      const year = rawYear.replace(',', '.'); // "0,5" -> "0.5"
+
+      const ALLOWED_YEARS = new Set(["0.5","1","1.5","2","2.5"]);
+
+      if (year && !ALLOWED_YEARS.has(year)) {
+        alert(`Year must be one of: ${[...ALLOWED_YEARS].join(', ')}`);
+        btn.disabled = false;
+        btn.querySelector('span').textContent = 'Post';
+        return;
+      }
 
       if (!title || !description) {
         alert('Title and Description are required.');
@@ -327,20 +338,24 @@ function smartBack() {
 
     // Construct preferences
     const preferences = [];
-    if (year) preferences.push(`years:${year}`);
-    if (location) {
-      const onCampus = location.toLowerCase().includes('campus');
-      preferences.push(onCampus ? 'on_campus' : 'off_campus');
-    }
+      if (location) {
+        const onCampus = /on[-\s]?campus/i.test(location);
+        const offCampus = /off[-\s]?campus/i.test(location);
+        if (onCampus) preferences.push('on_campus');
+        else if (offCampus) preferences.push('off_campus');
+      }
 
-    // --- Payload matches your backend nomenclature ---
-    const roommateData = {
-      title,
-      description,
-      preferences,
-      location,
-      images
-    };
+      // --- Payload matches backend nomenclature ---
+      const roommateData = {
+        title,
+        description,
+        preferences,
+        location,
+        images,
+        year
+      };
+
+      const API_URL = 'http://127.0.0.1:5000/api/roommates';
 
     
       const res = await fetch(form.action, {
@@ -369,7 +384,7 @@ function smartBack() {
   }
 
   alert('Roommate post created!');
-  window.location.href = 'profile_posts.html';
+  window.location.href = 'roommate_post.html';
   
   } catch (error) {
     console.error('Error:', error);

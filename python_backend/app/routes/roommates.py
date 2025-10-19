@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from app.models.roommate import Roommate
 from bson import ObjectId
+from app import db
 
 bp = Blueprint('roommates', __name__)
 
@@ -14,6 +15,8 @@ def _present_roommate(doc):
     return {
         "id": str(doc.get("_id")) if doc.get("_id") is not None else None,
         "user_id": str(doc.get("user_id")) if doc.get("user_id") is not None else None,
+        "username": doc.get("username", ""),
+        "year": doc.get("year", ""),
         "title": doc.get("title", ""),
         "description": doc.get("description", ""),
         "preferences": doc.get("preferences", []),
@@ -75,6 +78,8 @@ def get_roommate_posts():
 # POST /api/roommates
 @bp.route("/roommates", methods=["POST"])
 @login_required
+
+
 def create_roommate_post():
     try:
         print("Creating new roommate post...")
@@ -98,6 +103,47 @@ def create_roommate_post():
         if images is not None and not isinstance(images, list):
             return _error("'images' must be a list of base64 strings or URLs.", 400)
 
+            # --- CODE FOR REVIEWING POTENTIAL ERRORS ---
+        # 1) allow request to override
+        req_username = (data.get("username") or "").strip()
+        req_year = str(data.get("year") or "").strip()
+
+        # 2) try current_user attributes
+        cu_username = (
+            getattr(current_user, "username", None)
+            or getattr(current_user, "name", None)
+            or getattr(current_user, "full_name", None)
+            or getattr(current_user, "email", None)
+        )
+        cu_year = (
+            getattr(current_user, "year", None)
+            or getattr(current_user, "class_year", None)
+            or getattr(current_user, "graduation_year", None)
+        )
+
+        # 3) DB lookup 
+        uid = current_user.id
+        if not isinstance(uid, ObjectId):
+            try:
+                uid = ObjectId(uid)
+            except Exception:
+                return _error("Invalid user id.", 500)
+
+        u_doc = db.users.find_one(
+            {"_id": uid},
+            {"username": 1, "name": 1, "full_name": 1, "email": 1,
+            "year": 1, "class_year": 1, "graduation_year": 1}
+        ) or {}
+
+        db_username = u_doc.get("username") or u_doc.get("name") or u_doc.get("full_name") or u_doc.get("email")
+        db_year = u_doc.get("year") or u_doc.get("class_year") or u_doc.get("graduation_year")
+
+        # 4) final pick with safe fallbacks
+        username = req_username or cu_username or db_username or f"user-{str(uid)[:6]}"
+        year = str(req_year or cu_year or db_year or "")
+        # END
+
+
         uid = current_user.id
         if not isinstance(uid, ObjectId):
             try:
@@ -112,6 +158,8 @@ def create_roommate_post():
             preferences=preferences,
             location=location,
             images=images,
+            username=username,
+            year=year,
         )
 
         if post and isinstance(post, dict) and post.get("_id"):
@@ -139,6 +187,10 @@ def create_roommate_post():
     except Exception as e:
         print(f"[roommates.create] error: {e}")
         return _error(str(e), 500)
+
+
+
+
 
 # GET /api/roommates/<id>
 @bp.route("/roommates/<post_id>", methods=["GET"])

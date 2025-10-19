@@ -19,20 +19,35 @@ class Roommate:
     collection = db.roommates
 
     @staticmethod
-    def create_roommate_post(user_id, title, description, preferences=None, location=None, images=None):
+    def create_roommate_post(
+        user_id, title, description,
+        preferences=None, location=None, images=None,
+        username=None, year=None
+    ):
+
         roommate_data = {
             "user_id": ObjectId(user_id),
             "title": title,
             "description": description,
-            "preferences": preferences or [],   # list is easier to render on FE
+            "preferences": preferences or [],
             "location": location,
-            'images': images or [],
+            "images": images or [],
+            "username": (username or ""),
+            "year": (year or ""),
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }
+
+        # insert and verify what actually got saved
         result = Roommate.collection.insert_one(roommate_data)
+        saved = Roommate.collection.find_one(
+            {"_id": result.inserted_id},
+            {"username": 1, "year": 1}
+        )
+
         roommate_data["_id"] = result.inserted_id
         return _dump(roommate_data)
+
 
     @staticmethod
     def get_by_id(roommate_id):
