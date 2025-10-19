@@ -19,16 +19,14 @@ class Roommate:
     collection = db.roommates
 
     @staticmethod
-    def create_roommate_post(
-        user_id, title, description,
-        preferences=None, location=None, images=None,
-        username=None, year=None
+    def create_roommate_post(user_id, title, description, type='roommate', preferences=None, location=None, images=None, username=None, year=None
     ):
 
         roommate_data = {
             "user_id": ObjectId(user_id),
             "title": title,
             "description": description,
+            "type": type,
             "preferences": preferences or [],
             "location": location,
             "images": images or [],
