@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CasaConnect — Seller's Trades</title>
+  <link rel="stylesheet" href="common_style.css" />
+  <style>
+    .phone {
+      padding-top: 28px;
+    }
+
+    .wrap {
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      margin-left: 8px;
+    }
+
+    .status-pending {
+      background-color: #FF9800;
+    }
+
+    .status-accepted {
+      background-color: #4CAF50;
+    }
+
+    .status-completed {
+      background-color: #2196F3;
+    }
+
+    .status-cancelled {
+      background-color: #F44336;
+    }
+
+    .no-trades {
+      text-align: center;
+      color: #666;
+      margin-top: 40px;
+    }
+
+    .trade-card {
+      background-color: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border: 1px solid #eee;
+    }
+
+    .trade-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .trade-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .trade-info {
+      font-size: 14px;
+      color: #666;
+      margin: 8px 0;
+    }
+
+    .trade-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    .btn-view {
+      background-color: black;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .section-title {
+      font-weight: 700;
+      font-size: 18px;
+      margin: 24px 0 12px 0;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="phone">
+    <div class="topbar">
+      <div class="left">
+        <button onclick="smartBack()" class="back">
+          <img src="../assets/Chevron left.svg" alt="Back" />
+        </button>
+      </div>
+      <div class="title">Your Trades</div>
+      <div class="right"></div>
+    </div>
+
+    <div class="wrap">
+      <div id="tradesContainer">
+        <div class="loading">Loading your trades...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Smart back navigation
+    function smartBack() {
+      const params = new URLSearchParams(location.search);
+      const from = params.get("from");
+      const base = location.pathname.replace(/[^\/]+$/, "");
+      const map = { profile: "profile.html", home: "home.html", posts: "search.html" };
+
+      if (from && map[from]) { location.href = base + map[from]; return; }
+
+      const sameOriginRef =
+        document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false } })();
+      const isAdd = (url) => /(additem\.html|addroommate\.html)$/.test(new URL(url, location.origin).pathname);
+
+      if (sameOriginRef && document.referrer && !isAdd(document.referrer)) { location.href = document.referrer; return; }
+
+      const lastNonAdd = sessionStorage.getItem('lastNonAdd');
+      if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) { location.href = lastNonAdd; return; }
+
+      location.href = base + "profile.html";
+    }
+
+    // Check user authentication
+    async function checkAuth() {
+      try {
+        const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+        const response = await fetch(`${baseUrl}/api/users/profile`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+          return null;
+        }
+
+        const userData = await response.json();
+        console.log('User profile data:', userData);
+        
+        // Store user ID in localStorage for other pages to use
+        const userId = userData.data._id || userData.data.id;
+        localStorage.setItem('currentUserId', userId);
+        console.log('Set currentUserId in localStorage:', userId);
+        
+        return userId;
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+        return null;
+      }
+    }
+
+    // Format date to human-readable format
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    }
+
+    // Get status badge HTML
+    function getStatusBadge(status) {
+      const statusMap = {
+        'pending': 'Pending',
+        'accepted': 'Accepted',
+        'completed': 'Completed',
+        'cancelled': 'Cancelled',
+        'open': 'Available'
+      };
+      
+      return `<span class="status-badge status-${status.toLowerCase()}">${statusMap[status] || status}</span>`;
+    }
+
+    // Fetch and display trades where user is the seller
+    async function loadSellerTrades() {
+      const tradesContainer = document.getElementById('tradesContainer');
+      
+      try {
+        // Check authentication first
+        const userId = await checkAuth();
+        if (!userId) return;
+        
+        // Fetch user's posts to find trades where they're the seller
+        const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+        
+        // Fetch all trades
+        const response = await fetch(`${baseUrl}/api/trades/user/${userId}`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-User-ID': userId
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch trades: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('User trades data:', data);
+        
+        // Filter trades where the user is the seller (post owner)
+        // We need to check if the trade_preferences.post_id belongs to the user
+        const sellerTrades = data.filter(trade => {
+          // For now, assume we're the seller if we're not the buyer
+          // In a real app, you'd check if the post associated with the trade belongs to the user
+          return trade.trade_preferences && 
+                 trade.trade_preferences.buyer_id !== userId;
+        });
+        
+        if (sellerTrades.length === 0) {
+          tradesContainer.innerHTML = `
+            <div class="no-trades">
+              <p>You have no trades as a seller yet.</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Group trades by status
+        const pendingTrades = sellerTrades.filter(trade => 
+          trade.status === 'pending' || trade.trade_preferences.status === 'pending'
+        );
+        
+        const acceptedTrades = sellerTrades.filter(trade => 
+          trade.status === 'accepted' || trade.trade_preferences.status === 'accepted'
+        );
+        
+        const completedTrades = sellerTrades.filter(trade => 
+          trade.status === 'completed' || 
+          trade.status === 'cancelled' || 
+          trade.trade_preferences.status === 'completed' || 
+          trade.trade_preferences.status === 'cancelled'
+        );
+        
+        // Build the HTML
+        let html = '';
+        
+        if (pendingTrades.length > 0) {
+          html += `<div class="section-title">Pending Requests (${pendingTrades.length})</div>`;
+          html += pendingTrades.map(trade => createTradeCard(trade)).join('');
+        }
+        
+        if (acceptedTrades.length > 0) {
+          html += `<div class="section-title">Accepted Trades (${acceptedTrades.length})</div>`;
+          html += acceptedTrades.map(trade => createTradeCard(trade)).join('');
+        }
+        
+        if (completedTrades.length > 0) {
+          html += `<div class="section-title">Completed & Cancelled (${completedTrades.length})</div>`;
+          html += completedTrades.map(trade => createTradeCard(trade)).join('');
+        }
+        
+        tradesContainer.innerHTML = html;
+        
+      } catch (error) {
+        console.error('Error loading trades:', error);
+        tradesContainer.innerHTML = `
+          <div class="no-trades">
+            <p>Error loading trades. Please try again later.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Create HTML for a trade card
+    function createTradeCard(trade) {
+      const tradeId = trade._id;
+      const status = trade.trade_preferences.status || trade.status;
+      const itemName = trade.item_name || 'Trade Request';
+      const date = formatDate(trade.created_at);
+      
+      return `
+        <div class="trade-card">
+          <div class="trade-card-header">
+            <h3 class="trade-title">${itemName}</h3>
+            ${getStatusBadge(status)}
+          </div>
+          <div class="trade-info">
+            <div>Created: ${date}</div>
+            <div>Contact: ${trade.trade_preferences.contact_info || 'Not provided'}</div>
+          </div>
+          <div class="trade-actions">
+            <button class="btn-view" onclick="viewTrade('${tradeId}')">View Details</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Navigate to trade details page
+    function viewTrade(tradeId) {
+      const base = location.pathname.replace(/[^\/]+$/, "");
+      location.href = base + `seller_trade_page.html?id=${tradeId}`;
+    }
+
+    // Load trades when page loads
+    document.addEventListener('DOMContentLoaded', loadSellerTrades);
+  </script>
+</body>
+
+</html>

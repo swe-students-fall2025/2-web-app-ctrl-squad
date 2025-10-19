@@ -297,133 +297,423 @@
                 <button class="btn-back" type="button" onclick="window.location.href='exchange_post.html'">Back</button>
             </div>
             <div class="wrap">
-
-                <div class="form-block">
-                   <a class="skel-card" href="exchange_post.html">
-                     <div class="img-skel">item<br />picture</div>
-                     <div class="skel-row">
-                         <div class="short-skel">
-                            <img class="categories-icon" src="../assets/categorie-electronics.svg" alt="">
-                         </div>
-                         <div class="skel">item name</div>
-                     </div>
-                   </a>
-                   <a class="skel" href="user_profile.html">From sender account name</a>
-
-                <!---- if the buyer clicked exchanged -->
-
-                   <div class="buyer-trade-actions">
-                     <div class="btn-trade btn-status">Status: Pending</div>
-                     <a class="btn-trade btn-danger" id="exchangeBtn">Cancel Trade</a>
-                   </div>
-
-                    <!-- Popup -->
-                    <div id="popup" class="popup" aria-hidden="true">
-                        <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
-                        
-                        <form id="exchangeForm">
+                <div class="form-block" id="tradeDetails">
+                   <div class="skel">Loading trade details...</div>
+                </div>
+                
+                <!-- Cancel Trade Popup -->
+                <div id="cancelPopup" class="popup" aria-hidden="true">
+                    <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="cancelPopupTitle">
+                        <form id="cancelForm">
                             <div class="popup-frame">
-                            <label id="popupTitle" for="message">Are you sure to cancel? You can't undo this action.</label>
+                                <label id="cancelPopupTitle">Are you sure you want to cancel this trade? You can't undo this action.</label>
                             </div>
                             <div class="popup-actions">
-                            <button type="button" class="btn-popup" id="cancelBtn">Not Now</button>
-                            <button type="submit" class="btn-popup btn-popup-danger" id="confirmBtn">Cancel</button>
+                                <button type="button" class="btn-popup" id="cancelCancelBtn">Not Now</button>
+                                <button type="submit" class="btn-popup btn-popup-danger" id="confirmCancelBtn">Cancel Trade</button>
                             </div>
                         </form>
-                        </div>
                     </div>
-
-                <!---- if the seller accepts the trade show below
-
-                <div class="buyer-trade-actions">
-                     <div class="btn-trade btn-status">Status: Accepted</div>
-                     <a class="btn-trade btn-great"  href="requestConfirm.html">Confirm Trade</a>
                 </div>
-
-                <!`---- 
-                if the seller rejects the trade show below
-
-                <div class="buyer-trade-actions">
-                     <div class="btn-trade btn-status">Status: Declined</div>
-                     <a class="btn-trade btn-great"  href="TradeDelete.html">Delete Trade</a>
-                </div>
-                -->
                 
+                <!-- Confirm Receipt Popup -->
+                <div id="confirmReceiptPopup" class="popup" aria-hidden="true">
+                    <div class="popup-content" role="dialog" aria-modal="true" aria-labelledby="confirmReceiptPopupTitle">
+                        <form id="confirmReceiptForm">
+                            <div class="popup-frame">
+                                <label id="confirmReceiptPopupTitle">Confirm that you have received this item?</label>
+                                <textarea id="receiptFeedback" name="feedback" placeholder="Optional: Add any feedback about this exchange..."></textarea>
+                            </div>
+                            <div class="popup-actions">
+                                <button type="button" class="btn-popup" id="cancelReceiptBtn">Not Now</button>
+                                <button type="submit" class="btn-popup btn-strong" id="confirmReceiptBtn">Confirm Receipt</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- smart back -->
     <script>
+        // Global variables
+        let currentTradeId = null;
+        let currentTrade = null;
+        
+        // Smart back function
         function smartBack() {
-            const params = new URLSearchParams(location.search);
-            const from = params.get("from");
             const base = location.pathname.replace(/[^\/]+$/, "");
-            const map = { profile: "profile.html", home: "home.html", posts: "search.html" };
-
-            
-            if (from && map[from]) { location.href = base + map[from]; return; }
-
-            
-            const sameOriginRef =
-                document.referrer && (() => { try { return new URL(document.referrer).origin === location.origin } catch { return false } })();
-            const isAdd = (url) => /(additem\.html|addroommate\.html)$/.test(new URL(url, location.origin).pathname);
-
-            if (sameOriginRef && document.referrer && !isAdd(document.referrer)) {
-                location.href = document.referrer; return;
-            }
-
-            
-            const lastNonAdd = sessionStorage.getItem('lastNonAdd');
-            if (lastNonAdd && !isAdd(lastNonAdd) && lastNonAdd !== location.href) {
-                location.href = lastNonAdd; return;
-            }
-
-            
-            location.href = base + "profile.html";
+            location.href = base + "manage_order.html";
         }
-
-    // ===== Popup logic =====
-    const popup = document.getElementById('popup');
-    const openBtn = document.getElementById('exchangeBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const form = document.getElementById('exchangeForm');
-
-    function openPopup() {
-      popup.style.display = 'block';
-      popup.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden'; 
-    }
-
-    function closePopup() {
-      popup.style.display = 'none';
-      popup.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-    }
-
-    // open
-    openBtn.addEventListener('click', openPopup);
-
-    // cancel
-    function handleCancel() { closePopup(); }
-    cancelBtn.addEventListener('click', handleCancel);
-
-    function handleSubmit(e) {
-    if (e) e.preventDefault();
-    closePopup();
-    const base = location.pathname.replace(/[^\/]+$/, "");
-    location.href = base + "requestCancel.html";
-    }
-    form.addEventListener('submit', handleSubmit);
-
-    popup.addEventListener('click', (ev) => {
-      if (ev.target === popup) closePopup();
-    });
-
-    window.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape' && popup.style.display === 'block') closePopup();
-    });
+        
+        // Function to load trade details
+        async function loadTradeDetails() {
+            try {
+                // Get trade ID from URL parameters (check multiple parameter names)
+                const params = new URLSearchParams(window.location.search);
+                let tradeId = params.get('id') || params.get('tradeId') || params.get('trade_id');
+                
+                // If no trade ID in URL, try to get it from localStorage
+                if (!tradeId) {
+                    tradeId = localStorage.getItem('lastTradeId');
+                    console.log('Retrieved trade ID from localStorage:', tradeId);
+                }
+                
+                if (!tradeId) {
+                    throw new Error('No trade ID provided');
+                }
+                
+                console.log('Using trade ID:', tradeId);
+                currentTradeId = tradeId;
+                
+                // Get current user ID
+                const userId = localStorage.getItem('currentUserId');
+                if (!userId) {
+                    console.error('No user ID found');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Get API base URL
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                
+                // Fetch trade details
+                const response = await fetch(`${baseUrl}/api/trades/${tradeId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin,
+                        'X-User-ID': userId
+                    },
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                if (response.status === 401) {
+                    console.error('Authentication failed');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch trade: ${response.status}`);
+                }
+                
+                const trade = await response.json();
+                console.log('Trade details loaded:', trade);
+                currentTrade = trade;
+                
+                // Verify this user is the buyer
+                if (trade.buyer_id !== userId) {
+                    throw new Error('You do not have permission to view this trade');
+                }
+                
+                // Display trade details
+                displayTradeDetails(trade);
+                
+            } catch (error) {
+                console.error('Error loading trade details:', error);
+                document.getElementById('tradeDetails').innerHTML = `
+                    <div class="skel">Error: ${error.message}</div>
+                    <button class="btn-primary" onclick="loadTradeDetails()">Retry</button>
+                `;
+            }
+        }
+        
+        // Function to display trade details
+        function displayTradeDetails(trade) {
+            const post = trade.post || {};
+            const detailsContainer = document.getElementById('tradeDetails');
+            
+            // Format dates
+            const createdDate = new Date(trade.created_at).toLocaleString();
+            const updatedDate = trade.updated_at ? new Date(trade.updated_at).toLocaleString() : null;
+            
+            // Prepare the post image
+            const postImage = post.images && post.images.length > 0 
+                ? `style="background-image: url('${post.images[0]}'); background-size: cover; background-position: center;"`
+                : '';
+            
+            // Determine the status display and actions
+            let statusDisplay = '';
+            let actionsDisplay = '';
+            
+            switch(trade.status) {
+                case 'pending':
+                    statusDisplay = '<div class="btn-trade btn-status">Status: Pending</div>';
+                    actionsDisplay = '<button class="btn-trade btn-danger" id="cancelTradeBtn">Cancel Trade</button>';
+                    break;
+                case 'accepted':
+                    statusDisplay = '<div class="btn-trade btn-status">Status: Accepted</div>';
+                    actionsDisplay = '<button class="btn-trade btn-great" id="confirmReceiptBtn">Confirm Receipt</button>';
+                    break;
+                case 'completed':
+                    statusDisplay = '<div class="btn-trade btn-status btn-great">Status: Completed</div>';
+                    actionsDisplay = '';
+                    break;
+                case 'cancelled':
+                    statusDisplay = '<div class="btn-trade btn-status btn-danger">Status: Cancelled</div>';
+                    actionsDisplay = '';
+                    break;
+                case 'rejected':
+                    statusDisplay = '<div class="btn-trade btn-status btn-danger">Status: Rejected</div>';
+                    actionsDisplay = '';
+                    break;
+            }
+            
+            // Build HTML
+            detailsContainer.innerHTML = `
+                <a class="skel-card" href="exchange_post.html?id=${post._id || ''}">
+                    <div class="img-skel" ${postImage}>
+                        ${!post.images || post.images.length === 0 ? 'No Image<br />Available' : ''}
+                    </div>
+                    <div class="skel-row">
+                        <div class="short-skel">
+                            <img class="categories-icon" src="../assets/Image.svg" alt="Item icon">
+                        </div>
+                        <div class="skel">${post.title || 'Unknown Item'}</div>
+                    </div>
+                </a>
+                
+                <a class="skel" href="#">From: ${post.user_name || 'Unknown Seller'}</a>
+                
+                <div class="skel">
+                    <div class="field-label">Description:</div>
+                    ${post.description || 'No description available'}
+                </div>
+                
+                <div class="skel">
+                    <div class="field-label">Your Contact Info:</div>
+                    ${trade.contact_info || 'No contact information provided'}
+                </div>
+                
+                <div class="skel">
+                    <div class="field-label">Request Date:</div>
+                    ${createdDate}
+                </div>
+                
+                ${updatedDate ? `
+                <div class="skel">
+                    <div class="field-label">Last Updated:</div>
+                    ${updatedDate}
+                </div>
+                ` : ''}
+                
+                <div class="buyer-trade-actions">
+                    ${statusDisplay}
+                    ${actionsDisplay}
+                </div>
+            `;
+            
+            // Add event listeners for action buttons
+            if (trade.status === 'pending') {
+                const cancelBtn = document.getElementById('cancelTradeBtn');
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', openCancelPopup);
+                }
+            } else if (trade.status === 'accepted') {
+                const confirmBtn = document.getElementById('confirmReceiptBtn');
+                if (confirmBtn) {
+                    confirmBtn.addEventListener('click', openConfirmReceiptPopup);
+                }
+            }
+        }
+        
+        // ===== Cancel Trade Popup Logic =====
+        function openCancelPopup() {
+            const popup = document.getElementById('cancelPopup');
+            popup.style.display = 'block';
+            popup.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeCancelPopup() {
+            const popup = document.getElementById('cancelPopup');
+            popup.style.display = 'none';
+            popup.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+        
+        async function handleCancelTrade(e) {
+            if (e) e.preventDefault();
+            
+            if (!currentTradeId) {
+                alert('No trade ID found');
+                closeCancelPopup();
+                return;
+            }
+            
+            try {
+                // Get current user ID
+                const userId = localStorage.getItem('currentUserId');
+                if (!userId) {
+                    throw new Error('You must be logged in to cancel a trade');
+                }
+                
+                // Get API base URL
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                
+                // Disable the confirm button
+                const confirmBtn = document.getElementById('confirmCancelBtn');
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Cancelling...';
+                
+                // Update trade status to cancelled
+                const response = await fetch(`${baseUrl}/api/trades/${currentTradeId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin,
+                        'X-User-ID': userId
+                    },
+                    credentials: 'include',
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        status: 'cancelled',
+                        cancelled_by: userId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to cancel trade: ${response.status}`);
+                }
+                
+                // Close popup and reload trade details
+                closeCancelPopup();
+                
+                // Refresh the page or redirect
+                alert('Trade cancelled successfully');
+                window.location.href = 'manage_order.html';
+                
+            } catch (error) {
+                console.error('Error cancelling trade:', error);
+                alert('Failed to cancel trade: ' + error.message);
+                
+                // Re-enable the confirm button
+                const confirmBtn = document.getElementById('confirmCancelBtn');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Cancel Trade';
+            }
+        }
+        
+        // ===== Confirm Receipt Popup Logic =====
+        function openConfirmReceiptPopup() {
+            const popup = document.getElementById('confirmReceiptPopup');
+            popup.style.display = 'block';
+            popup.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeConfirmReceiptPopup() {
+            const popup = document.getElementById('confirmReceiptPopup');
+            popup.style.display = 'none';
+            popup.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+        
+        async function handleConfirmReceipt(e) {
+            if (e) e.preventDefault();
+            
+            if (!currentTradeId) {
+                alert('No trade ID found');
+                closeConfirmReceiptPopup();
+                return;
+            }
+            
+            try {
+                // Get current user ID
+                const userId = localStorage.getItem('currentUserId');
+                if (!userId) {
+                    throw new Error('You must be logged in to confirm receipt');
+                }
+                
+                // Get feedback
+                const feedback = document.getElementById('receiptFeedback').value.trim();
+                
+                // Get API base URL
+                const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+                
+                // Disable the confirm button
+                const confirmBtn = document.getElementById('confirmReceiptBtn');
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Confirming...';
+                
+                // Update trade status to completed
+                const response = await fetch(`${baseUrl}/api/trades/${currentTradeId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin,
+                        'X-User-ID': userId
+                    },
+                    credentials: 'include',
+                    mode: 'cors',
+                    body: JSON.stringify({
+                        status: 'completed',
+                        feedback: feedback
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to confirm receipt: ${response.status}`);
+                }
+                
+                // Close popup
+                closeConfirmReceiptPopup();
+                
+                // Show success message and redirect
+                alert('Receipt confirmed. Trade completed successfully!');
+                window.location.href = 'manage_order.html';
+                
+            } catch (error) {
+                console.error('Error confirming receipt:', error);
+                alert('Failed to confirm receipt: ' + error.message);
+                
+                // Re-enable the confirm button
+                const confirmBtn = document.getElementById('confirmReceiptBtn');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm Receipt';
+            }
+        }
+        
+        // Setup event listeners when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load trade details
+            loadTradeDetails();
+            
+            // Setup cancel popup listeners
+            const cancelCancelBtn = document.getElementById('cancelCancelBtn');
+            const cancelForm = document.getElementById('cancelForm');
+            const cancelPopup = document.getElementById('cancelPopup');
+            
+            cancelCancelBtn.addEventListener('click', closeCancelPopup);
+            cancelForm.addEventListener('submit', handleCancelTrade);
+            cancelPopup.addEventListener('click', (e) => {
+                if (e.target === cancelPopup) closeCancelPopup();
+            });
+            
+            // Setup confirm receipt popup listeners
+            const cancelReceiptBtn = document.getElementById('cancelReceiptBtn');
+            const confirmReceiptForm = document.getElementById('confirmReceiptForm');
+            const confirmReceiptPopup = document.getElementById('confirmReceiptPopup');
+            
+            cancelReceiptBtn.addEventListener('click', closeConfirmReceiptPopup);
+            confirmReceiptForm.addEventListener('submit', handleConfirmReceipt);
+            confirmReceiptPopup.addEventListener('click', (e) => {
+                if (e.target === confirmReceiptPopup) closeConfirmReceiptPopup();
+            });
+            
+            // Setup escape key handler for both popups
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (cancelPopup.style.display === 'block') closeCancelPopup();
+                    if (confirmReceiptPopup.style.display === 'block') closeConfirmReceiptPopup();
+                }
+            });
+        });
     </script>
 </body>
 

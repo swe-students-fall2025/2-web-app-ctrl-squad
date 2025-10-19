@@ -201,3 +201,50 @@ def get_user_posts_by_type(post_type):
         return jsonify({'error': str(e)}), 500
         print(f"Error updating profile: {e}")
         return jsonify({'error': str(e)}), 500
+
+# Add route to get user by ID - supports both regular requests and preflight OPTIONS requests
+@bp.route('/<user_id>', methods=['GET', 'OPTIONS'])
+def get_user(user_id):
+    """Get a specific user by their ID"""
+    if request.method == 'OPTIONS':
+        response = make_response()
+        origin = request.headers.get('Origin')
+        response.headers.update({
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, X-User-ID, Origin, Authorization',
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Max-Age': '3600'
+        })
+        return response
+    
+    try:
+        # Try to convert user_id to ObjectId
+        obj_user_id = ObjectId(user_id)
+        user = db.users.find_one({'_id': obj_user_id})
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Convert ObjectId to string for JSON serialization
+        user['_id'] = str(user['_id'])
+        
+        # Build response with proper CORS headers
+        response = jsonify(user)
+        origin = request.headers.get('Origin')
+        if origin:
+            response.headers.update({
+                'Access-Control-Allow-Origin': origin,
+                'Access-Control-Allow-Credentials': 'true'
+            })
+        return response
+    except Exception as e:
+        print(f"Error fetching user: {e}")
+        response = jsonify({'error': str(e)})
+        origin = request.headers.get('Origin')
+        if origin:
+            response.headers.update({
+                'Access-Control-Allow-Origin': origin,
+                'Access-Control-Allow-Credentials': 'true'
+            })
+        return response, 500
