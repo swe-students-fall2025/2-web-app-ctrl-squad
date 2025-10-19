@@ -177,12 +177,19 @@
                                     <small class="text-muted">Posted: ${new Date(post.created_at).toLocaleDateString()}</small>
                                 </div>
                                 <div class="actions">
-                                    <a class="btn secondary" href="singlePost.html?id=${post._id}">View</a>
+                                    <a class="btn secondary" href="exchange_post.html?id=${post._id}">View</a>
                                     <button class="btn" onclick="editPost('${post._id}')">Edit</button>
                                     <button class="btn btn-danger" onclick="deletePost('${post._id}')">Delete</button>
                                 </div>
                             </article>
                         `).join('');
+                    }
+                    
+                    // Function to handle editing a post
+                    async function editPost(postId) {
+                        console.log('Editing post with ID:', postId);
+                        // Redirect to the edit page with the post ID
+                        window.location.href = `itemPost_edit.html?id=${postId}`;
                     }
 
                     async function deletePost(postId) {

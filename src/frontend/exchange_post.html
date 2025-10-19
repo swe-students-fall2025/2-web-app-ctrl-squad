@@ -253,34 +253,61 @@
   </div>
 
   <script>
-    // Get post ID from URL parameters and load post details
-    function getPostId() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('id');
-    }
+    // Function to handle loading post details
 
     async function loadPostDetails() {
-      const postId = getPostId();
-      if (!postId) {
-        console.error('No post ID provided');
-        return;
-      }
-
       try {
-        const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
-          credentials: 'include' // This is needed to include cookies
+        const params = new URLSearchParams(window.location.search);
+        const postId = params.get('id');
+        
+        if (!postId) {
+          throw new Error('No post ID provided in URL');
+        }
+        
+        // Get base URL from localStorage or use default
+        const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+        
+        // Get the user ID if available
+        const userId = localStorage.getItem('currentUserId') || '';
+        
+        // Show loading state
+        document.getElementById('postTitle').textContent = 'Loading...';
+        document.getElementById('postDescription').textContent = 'Loading post details...';
+        document.getElementById('postMeta').textContent = 'Please wait...';
+        
+        const response = await fetch(`${baseUrl}/api/posts/${postId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': window.location.origin,
+            'X-User-ID': userId
+          },
+          credentials: 'include',
+          mode: 'cors'
         });
+        
+        if (response.status === 401) {
+          window.location.href = 'login.html';
+          return;
+        }
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch post details');
+          throw new Error(`Failed to fetch post details: ${response.status}`);
         }
 
         const post = await response.json();
+        console.log('Post details loaded:', post);
         
         // Update UI elements with post data
-        document.getElementById('username').textContent = post.author_name || 'Unknown User';
+        document.getElementById('username').textContent = post.author_name || post.user_name || 'Unknown User';
         document.getElementById('postTitle').textContent = post.title || 'No Title';
         document.getElementById('postDescription').textContent = post.description || 'No Description';
-        document.getElementById('postMeta').textContent = `Last edited ${new Date(post.updated_at || post.created_at).toLocaleString()}`;
+        
+        // Format the date properly
+        const postDate = post.updated_at || post.created_at;
+        const formattedDate = postDate ? new Date(postDate).toLocaleString() : 'Unknown date';
+        document.getElementById('postMeta').textContent = `Last edited ${formattedDate}`;
 
         // Update image if available
         const imageElement = document.getElementById('postImage');
@@ -303,12 +330,37 @@
         }
       } catch (error) {
         console.error('Error loading post details:', error);
-        alert('Failed to load post details. Please try again later.');
+        
+        // Display error in the UI instead of using an alert
+        document.getElementById('postTitle').textContent = 'Error Loading Post';
+        document.getElementById('postDescription').textContent = error.message || 'Failed to load post details';
+        document.getElementById('postMeta').textContent = 'Please try refreshing the page';
+        
+        // Clear image container
+        const imageElement = document.getElementById('postImage');
+        if (imageElement) {
+          imageElement.style.backgroundImage = '';
+          imageElement.textContent = 'Image not available';
+        }
+        
+        // Hide action buttons
+        const exchangeBtn = document.getElementById('exchangeBtn');
+        if (exchangeBtn) exchangeBtn.style.display = 'none';
+        
+        // Add a retry button
+        const actionsDiv = document.querySelector('.actions');
+        if (actionsDiv) {
+          const retryButton = document.createElement('button');
+          retryButton.className = 'btn-action';
+          retryButton.textContent = 'Retry Loading';
+          retryButton.onclick = loadPostDetails;
+          actionsDiv.appendChild(retryButton);
+        }
       }
     }
 
     // Load post details when page loads
-    window.addEventListener('load', loadPostDetails);
+    document.addEventListener('DOMContentLoaded', loadPostDetails);
 
     // Smart back
     function smartBack() {

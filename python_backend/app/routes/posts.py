@@ -31,6 +31,10 @@ def get_posts():
 @login_required
 def create_post():
     print("Creating new post...")
+    print(f"Session: {session}")
+    print(f"Current user: {current_user.id if current_user else 'No current user'}")
+    print(f"Headers: {dict(request.headers)}")
+    
     data = request.get_json()
     print("Received data:", data)
     
@@ -39,9 +43,21 @@ def create_post():
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
     
     try:
-        print(f"Creating post for user: {current_user.id}")
+        # Check if we should use a different user ID from the header
+        user_id = current_user.id  # Default to the session user
+        user_id_header = request.headers.get('X-User-ID')
+        
+        if user_id_header:
+            print(f"X-User-ID header present: {user_id_header}")
+            if user_id_header != str(user_id):
+                print(f"Warning: X-User-ID header ({user_id_header}) doesn't match session user ({user_id})")
+                print("Using session user ID for consistency")
+        else:
+            print("No X-User-ID header present, using session user")
+        
+        print(f"Creating post for user: {user_id}")
         post = Post.create_post(
-            user_id=current_user.id,
+            user_id=user_id,
             title=data['title'],
             description=data['description'],
             type=data.get('type', 'item'),
