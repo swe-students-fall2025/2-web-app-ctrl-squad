@@ -7,10 +7,18 @@
         <link rel="stylesheet" href="style_revised.css"/>
         <link rel="stylesheet" href="common_style.css"/>
     </head>
+    
+    
 
     <body>
         <div class="screen">
             <div class="phone profile-posts">
+                <div class="topbar">
+                <button class="btn-back" type="button" onclick="smartBack()">Back</button>
+                </div>
+                <h1>&nbsp;&nbsp;&nbsp;</h1>
+
+
                 <h1>My Posts</h1>
 
                 <div class="list">
@@ -295,6 +303,13 @@
   </div>
 
   <script>
+
+        function smartBack() {
+            const base = location.pathname.replace(/[^\/]+$/, "");
+            location.href = base + "profile.html";
+        }
+  
+
     /**
      * Show popup and lock body scroll.
      */
