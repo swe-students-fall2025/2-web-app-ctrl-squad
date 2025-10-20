@@ -12,9 +12,11 @@ bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 @bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     if request.method == 'OPTIONS':
-        # Handling preflight request
-        response = jsonify({'status': 'ok'})
-        return response
+        # Let Flask-CORS attach the headers; just return 204.
+        return ('', 204)
+
+    # Only parse JSON for actual POSTs
+    data = request.get_json(silent=True) or {}
 
     if not request.is_json:
         return jsonify({'error': 'Content-Type must be application/json'}), 415

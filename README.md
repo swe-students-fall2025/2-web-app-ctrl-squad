@@ -62,6 +62,11 @@ pip install -r requirements.txt
 MONGODB_URI=mongodb+srv://kylie_lin_nyu:nHNeQssUVF331TFa@ctrl-squad-nyu-swe.9nfst5t.mongodb.net/ctrl-squad-db?retryWrites=true&w=majority
 #SECRET_KEY=c1050c4a8cc3d6ea4d625c7af7c9bed4961971c6b5d1a3d39f05848b62ce7922
 PORT=5000
+
+
+
+export MONGODB_URI="mongodb+srv://kylie_lin_nyu:nHNeQssUVF331TFa@ctrl-squad-nyu-swe.9nfst5t.mongodb.net/ctrl-squad-db?retryWrites=true&w=majority"
+
 ```
 
 ```bash

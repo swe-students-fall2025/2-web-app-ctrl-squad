@@ -43,18 +43,18 @@ app.config.update(
     
     # Session configuration
     SESSION_COOKIE_NAME='casaconnect_session',
-    SESSION_COOKIE_SECURE=not DEV_MODE,  # Set to False in development (HTTP), True in production
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax' if DEV_MODE else 'None',  # Use Lax in development, None in production
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=False,
     SESSION_COOKIE_DOMAIN=None,  # Allow all domains in development
     PERMANENT_SESSION_LIFETIME=timedelta(days=1),  # One day session lifetime
     SESSION_TYPE='filesystem',  # Use filesystem session storage
     
     # Remember me cookie configuration
     REMEMBER_COOKIE_NAME='casaconnect_remember',
-    REMEMBER_COOKIE_SECURE=not DEV_MODE,  # Set to False in development (HTTP), True in production
     REMEMBER_COOKIE_HTTPONLY=True,
-    REMEMBER_COOKIE_SAMESITE='Lax' if DEV_MODE else 'None',  # Use Lax in development, None in production
+    REMEMBER_COOKIE_SAMESITE="None",
+    REMEMBER_COOKIE_SECURE=False,
     REMEMBER_COOKIE_DURATION=timedelta(days=7)  # Reduced from 14 days to 7 days
 )
 
@@ -123,20 +123,17 @@ def load_user(user_id):
         return None
 
 # Configure CORS to handle cross-origin requests
-CORS(app, 
-     resources={r"/*": {
-         # Allow all origins for development (consider restricting in production)
-         "origins": ["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:5000", 
-                    "http://127.0.0.1:5501", "http://localhost:5501"],
-         "allow_credentials": True,
-         "expose_headers": ["Set-Cookie", "X-User-ID", "Content-Type", "Authorization"],
-         "allow_headers": ["Content-Type", "Cookie", "Accept", "Origin", "X-User-ID", 
-                          "X-Requested-With", "Authorization", "Cache-Control"],
-         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         "max_age": 3600,
-         "supports_credentials": True
-     }},
-     supports_credentials=True)
+from flask_cors import CORS
+
+CORS(
+    app,
+    resources={r"/api/*": {"origins": ["http://127.0.0.1:5500", "http://localhost:5500"]}},
+    supports_credentials=True,
+    expose_headers=["Set-Cookie", "Authorization"],
+    allow_headers=["Content-Type", "Authorization", "Cookie", "Accept"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    max_age=3600,
+)
      
 # Make sessions permanent by default
 @app.before_request
