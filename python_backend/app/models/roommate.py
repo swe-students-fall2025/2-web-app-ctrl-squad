@@ -81,7 +81,10 @@ class Roommate:
         return _dump(docs)
 
     @staticmethod
-    def update_roommate_post(roommate_id, title=None, description=None, preferences=None, location=None):
+    def update_roommate_post(roommate_id, title=None, description=None, preferences=None, location=None, images=None, year=None):
+        print(f"[DEBUG] Model update method - roommate_id: {roommate_id}")
+        print(f"[DEBUG] Model update method - year parameter: {year}, type: {type(year)}")
+        
         update_data = {"updated_at": datetime.utcnow()}
         if title is not None:
             update_data["title"] = title
@@ -91,6 +94,11 @@ class Roommate:
             update_data["preferences"] = preferences
         if location is not None:
             update_data["location"] = location
+        if images is not None:
+            update_data["images"] = images
+        if year is not None:
+            update_data["year"] = year
+            print(f"[DEBUG] Adding year to update_data: {year}")
 
         res = Roommate.collection.update_one({"_id": ObjectId(roommate_id)}, {"$set": update_data})
         return res.modified_count > 0

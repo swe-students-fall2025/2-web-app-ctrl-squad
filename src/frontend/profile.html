@@ -461,6 +461,13 @@
             </div>
           </div>
         </article>
+        
+        <!-- Roommate Posts -->
+        <h3 class="section-title">Your Roommate Posts</h3>
+        <div id="userRoommatePosts">
+          <!-- Roommate Posts will be loaded here -->
+          <p class="muted">Loading your roommate posts...</p>
+        </div>
 
         <div class="spacer"></div>
       
@@ -722,10 +729,84 @@
             }
           }
           
-          // Load both user posts and incoming trades when page loads
+          // Function to load roommate posts
+          async function loadRoommatePosts() {
+            try {
+              // Get current user ID
+              const userId = localStorage.getItem('currentUserId');
+              if (!userId) {
+                console.error('User ID not found');
+                document.getElementById('userRoommatePosts').innerHTML = '<p class="muted">Please log in to see roommate posts</p>';
+                return;
+              }
+
+              const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+              // Use the /api/roommates endpoint with filtering for the current user's posts
+              const response = await fetch(`${baseUrl}/api/roommates?user_id=${userId}`, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'Origin': window.location.origin,
+                  'X-User-ID': userId // Add this back but use query param as backup
+                },
+                credentials: 'include',
+                mode: 'cors',
+                cache: 'no-store' // Ensure we don't get cached results
+              });
+              
+              if (!response.ok) {
+                throw new Error(`Failed to fetch roommate posts: ${response.status}`);
+              }
+
+              const data = await response.json();
+              // Check for different possible response formats
+              const roommates = data.roommates || data.posts || [];
+              const roommateContainer = document.getElementById('userRoommatePosts');
+
+              if (roommates.length === 0) {
+                roommateContainer.innerHTML = '<p class="muted">No roommate posts yet. Create your first roommate post!</p>';
+                return;
+              }
+
+              roommateContainer.innerHTML = roommates.map(roommate => `
+                <article class="post">
+                  <div class="post-head">
+                    <a class="skel-input" style="width:180px;" href="roommate_post.html?id=${roommate._id || roommate.id}&owner=true">${roommate.title}</a>
+                  </div>
+                  <div class="post-body">
+                    <div class="media">
+                      ${roommate.images && roommate.images.length > 0 ? 
+                        `<img src="${roommate.images[0]}" alt="${roommate.title}" style="width:100%; height:100%; object-fit:cover;">` :
+                        (roommate.imageUrl ? 
+                          `<img src="${roommate.imageUrl}" alt="${roommate.title}" style="width:100%; height:100%; object-fit:cover;">` :
+                          roommate.description || 'No description available')
+                      }
+                    </div>
+                    <div class="meta">
+                      ${roommate.preferences && roommate.preferences.length > 0 ? 
+                        `<div class="skel-chip">Preferences: ${roommate.preferences.join(', ')}</div>` : ''
+                      }
+                      <div class="skel-chip">Location: ${roommate.location || 'Not specified'}</div>
+                      <div class="skel-chip">Posted: ${formatDate(roommate.created_at || roommate.createdAt)}</div>
+                      <div class="skel-chip">Year: ${roommate.year || 'Not specified'}</div>
+                    </div>
+                  </div>
+                </article>
+                <div class="spacer"></div>
+              `).join('');
+            } catch (error) {
+              console.error('Error loading roommate posts:', error);
+              document.getElementById('userRoommatePosts').innerHTML = 
+                `<p class="muted">Failed to load roommate posts: ${error.message}</p>`;
+            }
+          }
+
+          // Load posts, trades, and roommate posts when the page loads
           document.addEventListener('DOMContentLoaded', () => {
             loadUserPosts();
             loadIncomingTrades();
+            loadRoommatePosts();
           });
         </script>
 

@@ -5,8 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="common_style.css">
-  <title>🏡 CasaConnect — Add roommate post</title>
-  <!-- same form -->
+  <title>🏡 CasaConnect — Edit Roommate Post</title>
   <style>
 
     .tabs {
@@ -164,35 +163,46 @@
       </div>
 
       <!-- parameters -->
-      <form id="postForm" class="form" action="http://localhost:5000/api/roommates" method="post">
+      <h2 style="text-align: center; margin-top: 0;">Edit Roommate Post</h2>
+      <form id="postForm" class="form" action="http://localhost:5000/api/roommates" method="put">
         <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Insert Image">Insert Image</div>
         <input id="imageInput" type="file" name="images" accept="image/*" hidden multiple />
 
         <div class="label">Title</div>
-        <input class="input" type="text" name="title" placeholder="Add title..." required />
+        <input class="input" type="text" name="title" id="title" placeholder="Add title..." required />
 
         <div class="label">Years to be Roommate</div>
         <div class="select-wrap">
-          <select name="year" aria-label="Year" required>
-            <option value="" disabled selected>Choose year</option>
-            <option>0.5</option>
-            <option>1</option>
-            <option>1.5</option>
-            <option>2</option>
-            <option>2.5</option>
+          <select name="year" id="year" aria-label="Year">
+            <option value="" disabled>Choose year</option>
+            <option value="0.5">0.5</option>
+            <option value="1">1</option>
+            <option value="1.5">1.5</option>
+            <option value="2">2</option>
+            <option value="2.5">2.5</option>
+            <option value="3">3</option>
+            <option value="3.5">3.5</option>
+            <option value="4">4</option>
+            <option value="Other">Other</option>
           </select>
            <img class="select-caret" src="../assets/Chevron down.svg" alt="caret icon">
         </div>
 
         <div class="label">Place to live</div>
-        <input class="input" type="text" name="place_to_live" placeholder="e.g., Brooklyn, off-campus, links to housing" required />
+        <input class="input" type="text" name="location" id="location" placeholder="e.g., Brooklyn, off-campus, links to housing" required />
 
         <div class="label">Add description...</div>
-        <textarea class="textarea" name="description" placeholder="Add description..." required></textarea>
+        <textarea class="textarea" name="description" id="description" placeholder="Add description..." required></textarea>
+
+        <div class="label">Preferences (comma-separated)</div>
+        <input class="input" type="text" name="preferences" id="preferences" placeholder="e.g., Non-smoker, early riser, quiet" />
 
         <div class="actions">
           <button class="btn btn-post" type="submit"><span>Update Post</span></button>
         </div>
+        
+        <div id="error-message" style="color: #c93b3b; margin-top: 10px; display: none;"></div>
+        <div id="success-message" style="color: #28a745; margin-top: 10px; display: none;"></div>
       </form>
 
       <div class="footer">© CTRL Squad, 2025</div>
@@ -202,6 +212,17 @@
   <!-- Back logic -->
 <script>
 function smartBack() {
+  const postId = getPostId();
+  
+  // If we have a postId, go back to the roommate post view
+  if (postId) {
+    // Check if we came from a page where we were the owner
+    const isOwner = new URLSearchParams(window.location.search).get('owner') === 'true';
+    window.location.href = `roommate_post.html?id=${postId}${isOwner ? '&owner=true' : ''}`;
+    return;
+  }
+  
+  // Otherwise use the standard back logic
   const params = new URLSearchParams(location.search);
   const from = params.get("from");
   const base = location.pathname.replace(/[^\/]+$/, "");
@@ -232,6 +253,127 @@ function smartBack() {
 
   <!-- submit parameters -->
   <script>
+    // Store original post data
+    let originalPostData = null;
+    
+    // Function to get post ID from URL
+    function getPostId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('id');
+    }
+    
+    // Function to load existing post data
+    async function loadPostData() {
+      try {
+        const postId = getPostId();
+        if (!postId) {
+          alert('No post ID provided. Redirecting to home page.');
+          window.location.href = 'home.html';
+          return;
+        }
+        
+        // Update form action to use PUT for update
+        const form = document.getElementById('postForm');
+        const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+        form.action = `${baseUrl}/api/roommates/${postId}`;
+        
+        // Fetch the post data
+        const response = await fetch(`${baseUrl}/api/roommates/${postId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch post data: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (!data.success || !data.post) {
+          throw new Error('Post not found or invalid response format');
+        }
+        
+        const post = data.post;
+        originalPostData = post;
+        
+        // Get user ID information for logging purposes
+        const userId = localStorage.getItem('currentUserId');
+        const postOwnerId = post.user_id || post.userId;
+        const comingFromProfilePage = new URLSearchParams(window.location.search).get('owner') === 'true';
+        
+        console.log('Edit page auth info:', {
+          userId: userId,
+          postOwnerId: postOwnerId,
+          comingFromProfile: comingFromProfilePage
+        });
+        
+        // Skip permission check - if we got here from roommate_post.html with the edit button,
+        // we've already verified ownership
+        
+        // Fill the form fields with existing data
+        const titleInput = document.querySelector('input[name="title"]');
+        if (titleInput) titleInput.value = post.title || '';
+        
+        const yearSelect = document.querySelector('select[name="year"]');
+        if (yearSelect) {
+          const yearValue = post.year || '';
+          console.log('Loading post year value:', yearValue, 'type:', typeof yearValue);
+          
+          // Try to find a matching option
+          let found = false;
+          for (let i = 0; i < yearSelect.options.length; i++) {
+            if (yearSelect.options[i].value == yearValue || 
+                yearSelect.options[i].text == yearValue ||
+                String(yearSelect.options[i].value) === String(yearValue)) {
+              yearSelect.selectedIndex = i;
+              console.log('Selected year option at index', i, 'with value', yearSelect.options[i].value);
+              found = true;
+              break;
+            }
+          }
+          
+          if (!found) {
+            console.log('Could not find matching year option for value:', yearValue);
+          }
+        }
+        
+        const locationInput = document.querySelector('input[name="location"]');
+        if (locationInput) locationInput.value = post.placesToLive || post.location || '';
+        
+        const descInput = document.querySelector('textarea[name="description"]');
+        if (descInput) descInput.value = post.description || '';
+        
+        const preferencesInput = document.querySelector('input[name="preferences"]');
+        if (preferencesInput && post.preferences) {
+          preferencesInput.value = Array.isArray(post.preferences) ? post.preferences.join(', ') : post.preferences;
+        }
+        
+        // If there's an image, display it in the dropzone
+        if (post.images && post.images.length > 0 && post.images[0]) {
+          const dropzone = document.getElementById('dropzone');
+          dropzone.classList.add('preview');
+          dropzone.innerHTML = `
+            <img src="${post.images[0]}" alt="preview" style="width:100%;height:100%;object-fit:contain;border-radius:8px"/>
+            <button type="button" class="remove-btn" aria-label="Remove image">Remove</button>
+          `;
+          dropzone.querySelector('.remove-btn').addEventListener('click', () => {
+            dropzone.classList.remove('preview');
+            dropzone.innerHTML = 'Insert Image';
+            originalPostData.images = []; // Clear original images
+          });
+        }
+        
+      } catch (error) {
+        console.error('Error loading post data:', error);
+        document.getElementById('error-message').textContent = 'Failed to load post data: ' + error.message;
+        document.getElementById('error-message').style.display = 'block';
+      }
+    }
+    
+    // Execute on page load
     (function () {
       const dropzone = document.getElementById('dropzone');
       const fileInput = document.getElementById('imageInput');
@@ -248,7 +390,7 @@ function smartBack() {
         const file = fileInput.files && fileInput.files[0];
         if (!file) return;
         if (!ACCEPTED.includes(file.type)) { alert('please upload png/jpg/jpeg/webp/gif'); fileInput.value = ''; return; }
-        if (file.size / (1024 * 1024) > MAX_MB) { alert('maximum 5KB'); fileInput.value = ''; return; }
+        if (file.size / (1024 * 1024) > MAX_MB) { alert('maximum 5MB'); fileInput.value = ''; return; }
         const reader = new FileReader();
         reader.onload = () => {
           dropzone.classList.add('preview');
@@ -260,6 +402,7 @@ function smartBack() {
             dropzone.classList.remove('preview');
             dropzone.innerHTML = 'Insert Image';
             fileInput.value = '';
+            if (originalPostData) originalPostData.images = []; // Clear original images if they exist
           });
         };
         reader.readAsDataURL(file);
@@ -281,13 +424,20 @@ function smartBack() {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        // Clear any previous messages
+        document.getElementById('error-message').style.display = 'none';
+        document.getElementById('success-message').style.display = 'none';
+        
         // Get form data
         const formData = new FormData(form);
         const images = fileInput.files;
-        const imageUrls = [];
+        let imageUrls = [];
 
-        // Convert images to base64 URLs
-        if (images.length > 0) {
+        // Keep original images if no new ones are uploaded
+        if (images.length === 0 && originalPostData && originalPostData.images && originalPostData.images.length > 0) {
+          imageUrls = originalPostData.images;
+        } else if (images.length > 0) {
+          // Convert images to base64 URLs
           for (let i = 0; i < images.length; i++) {
             const reader = new FileReader();
             await new Promise((resolve) => {
@@ -300,43 +450,89 @@ function smartBack() {
           }
         }
 
-        // Prepare the roommate post data
-        const roommateData = {
-          title: formData.get('title'),
-          description: formData.get('description'),
-          images: imageUrls,
-          year: parseFloat(formData.get('year')),
-          placesToLive: formData.get('place_to_live'),
-          onCampus: formData.get('place_to_live').toLowerCase().includes('campus'),
-          region: formData.get('place_to_live'), // Using place_to_live as region for now
-        };
+        // Process preferences
+        let preferences = [];
+        const preferencesInput = formData.get('preferences');
+        if (preferencesInput && preferencesInput.trim()) {
+          preferences = preferencesInput.split(',').map(p => p.trim()).filter(p => p);
+        }
+
+        // We no longer need this roommateData object since we're creating a minimalData object
+        // directly in the fetch request
 
         try {
-          const response = await fetch(form.action, {
-            method: 'POST',
+          const postId = getPostId();
+          const baseUrl = localStorage.getItem('apiBaseUrl') || 'http://127.0.0.1:5000';
+          
+          // Use PUT method for updating
+          // Create a data object that includes all fields the backend now accepts
+          const yearSelect = document.getElementById('year');
+          const yearValue = yearSelect.options[yearSelect.selectedIndex].value;
+          
+          console.log('Year dropdown selected index:', yearSelect.selectedIndex);
+          console.log('Year dropdown value:', yearValue);
+          console.log('Year dropdown raw value:', formData.get('year'));
+          
+          const updateData = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            preferences: preferences,
+            location: formData.get('location'),
+            images: imageUrls, // Now we can include images since we've updated the backend
+            year: yearValue // Include the year field from the dropdown
+          };
+          
+          console.log('Sending update with data:', updateData);
+          
+          const response = await fetch(`${baseUrl}/api/roommates/${postId}`, {
+            method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-User-ID': localStorage.getItem('currentUserId') || ''
             },
-            body: JSON.stringify(roommateData)
+            credentials: 'include',
+            body: JSON.stringify(updateData)
           });
 
           if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to create roommate post');
+            console.error('Server response error:', response.status, response.statusText);
+            let errorMessage = `Failed to update roommate post: ${response.status}`;
+            
+            try {
+              const errorData = await response.json();
+              console.error('Error data:', errorData);
+              errorMessage = errorData.error || errorMessage;
+            } catch (jsonError) {
+              console.error('Error parsing error response:', jsonError);
+            }
+            
+            throw new Error(errorMessage);
           }
 
           const data = await response.json();
+          console.log('Update response:', data);
+          
           if (data.success) {
-            alert('Roommate post created successfully!');
-            location.href = 'postconfirm.html';
+            document.getElementById('success-message').textContent = 'Roommate post updated successfully!';
+            document.getElementById('success-message').style.display = 'block';
+            
+            // Redirect after a short delay to show the success message
+            setTimeout(() => {
+              window.location.href = `roommate_post.html?id=${postId}`;
+            }, 1000);
           } else {
-            throw new Error(data.error || 'Failed to create roommate post');
+            throw new Error(data.error || 'Failed to update roommate post');
           }
         } catch (error) {
-          console.error('Error:', error);
-          alert(error.message || 'Failed to create roommate post. Please try again later.');
+          console.error('Error updating post:', error);
+          document.getElementById('error-message').textContent = error.message || 'Failed to update roommate post. Please try again later.';
+          document.getElementById('error-message').style.display = 'block';
         }
       });
+      
+      // Load the existing post data when the page loads
+      document.addEventListener('DOMContentLoaded', loadPostData);
     })();
   </script>
 </body>
