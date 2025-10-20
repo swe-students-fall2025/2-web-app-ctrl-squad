@@ -116,6 +116,9 @@ If the above link doesn't work (which might happen if you're not using Live Serv
    - Verify the MongoDB connection string in your `.env` file
    - Check if you have a proper internet connection to reach MongoDB Atlas
 
+4. **If you still have a problem:**
+   - Contact us
+
 ## Task boards
 
 ### **[Sprint 1](https://github.com/orgs/swe-students-fall2025/projects/5)**
