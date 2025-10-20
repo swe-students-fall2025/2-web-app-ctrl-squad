@@ -216,13 +216,16 @@ def update_roommate_post(post_id):
             return _error("Not authorized to edit this post", 403)
 
         data = request.get_json(silent=True) or {}
+        print(f"[DEBUG] Received update data: {data}")
+        print(f"[DEBUG] Year value received: {data.get('year')}")
         success = Roommate.update_roommate_post(
             roommate_id=post_id,
             title=data.get("title"),
             description=data.get("description"),
             preferences=data.get("preferences"),
             location=data.get("location"),
-            images=data.get("images")
+            images=data.get("images"),
+            year=data.get("year")
         )
 
         if success:
