@@ -87,6 +87,9 @@ flask run
 You should see output indicating that the Flask server is running at http://127.0.0.1:5000
 
 #### 3. Access the application
+
+We recommend using Live Server, an extension of VSCode, to run this project. Once it is downloaded, you can right click on login.html from the src/frontend folder to run. You can also follow the instructions below. 
+
 Once the Flask server is running, you can access the application by opening the following URL in your browser:
 
 [http://127.0.0.1:5500/src/frontend/login.html](http://127.0.0.1:5500/src/frontend/login.html)
